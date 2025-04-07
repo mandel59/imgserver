@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Viewer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        #image-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .image-thumbnail {
+            width: 200px;
+            height: 200px;
+            object-fit: cover;
+            cursor: pointer;
+        }
+        #controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 8px 16px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>Image Viewer</h1>
+    
+    <div id="controls">
+        <select id="sort-option">
+            <option value="name">名前順</option>
+            <option value="date">更新日時順</option>
+        </select>
+        <button id="prev-btn">前へ</button>
+        <button id="next-btn">次へ</button>
+    </div>
+
+    <div id="image-container"></div>
+
+    <script>
+        // 画像一覧を取得
+        async function fetchImages() {
+            const sortOption = document.getElementById('sort-option').value;
+            const response = await fetch(`/api/images?sort=${sortOption}`);
+            return await response.json();
+        }
+
+        // ソートオプション変更時の処理
+        document.getElementById('sort-option').addEventListener('change', async () => {
+            const images = await fetchImages();
+            renderImageList(images);
+        });
+
+        // 初期化処理
+        async function init() {
+            const images = await fetchImages();
+            renderImageList(images);
+        }
+
+        // モーダル表示用要素
+        const modal = document.createElement('div');
+        modal.id = 'image-modal';
+        modal.style.display = 'none';
+        modal.style.position = 'fixed';
+        modal.style.top = '0';
+        modal.style.left = '0';
+        modal.style.width = '100%';
+        modal.style.height = '100%';
+        modal.style.backgroundColor = 'rgba(0,0,0,0.9)';
+        modal.style.zIndex = '1000';
+        modal.style.justifyContent = 'center';
+        modal.style.alignItems = 'center';
+        modal.style.flexDirection = 'column';
+
+        const modalImg = document.createElement('img');
+        modalImg.style.maxWidth = '90%';
+        modalImg.style.maxHeight = '90%';
+
+        const closeBtn = document.createElement('span');
+        closeBtn.textContent = '×';
+        closeBtn.style.position = 'absolute';
+        closeBtn.style.top = '20px';
+        closeBtn.style.right = '30px';
+        closeBtn.style.color = 'white';
+        closeBtn.style.fontSize = '40px';
+        closeBtn.style.cursor = 'pointer';
+
+        modal.appendChild(closeBtn);
+        modal.appendChild(modalImg);
+        document.body.appendChild(modal);
+
+        let currentImageIndex = 0;
+        let currentImages = [];
+
+        // 画像一覧を表示
+        function renderImageList(images) {
+            const container = document.getElementById('image-container');
+            container.innerHTML = '';
+            currentImages = images;
+            
+            images.forEach((image, index) => {
+                const img = document.createElement('img');
+                img.src = `/images/${image}`;
+                img.className = 'image-thumbnail';
+                img.addEventListener('click', () => {
+                    currentImageIndex = index;
+                    modalImg.src = `/images/${image}`;
+                    modal.style.display = 'flex';
+                });
+                container.appendChild(img);
+            });
+        }
+
+        // 前の画像に移動
+        document.getElementById('prev-btn').addEventListener('click', () => {
+            if (currentImages.length === 0) return;
+            currentImageIndex = (currentImageIndex - 1 + currentImages.length) % currentImages.length;
+            modalImg.src = `/images/${currentImages[currentImageIndex]}`;
+        });
+
+        // 次の画像に移動
+        document.getElementById('next-btn').addEventListener('click', () => {
+            if (currentImages.length === 0) return;
+            currentImageIndex = (currentImageIndex + 1) % currentImages.length;
+            modalImg.src = `/images/${currentImages[currentImageIndex]}`;
+        });
+
+        // モーダルを閉じる
+        closeBtn.addEventListener('click', () => {
+            modal.style.display = 'none';
+        });
+
+        // ESCキーでモーダルを閉じる
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                modal.style.display = 'none';
+            }
+        });
+
+        // ページ読み込み時に初期化
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
