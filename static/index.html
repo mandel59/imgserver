@@ -385,6 +385,8 @@
 
         // 戻る/進む操作に対応 (新しい仕様に合わせて)
         window.addEventListener('popstate', () => {
+            // モーダルを閉じてから状態復元
+            modal.style.display = 'none';
             restoreFromURL();
         });
 
