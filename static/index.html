@@ -112,11 +112,13 @@
             if (currentImages.length === 0) return;
             currentImageIndex = (currentImageIndex + 1) % currentImages.length;
             modalImg.src = `/images/${currentImages[currentImageIndex].path}`;
+            updateAppState(currentPath, currentImages[currentImageIndex].path.split('/').pop());
         });
         hammer.on('swiperight', () => {
             if (currentImages.length === 0) return;
             currentImageIndex = (currentImageIndex - 1 + currentImages.length) % currentImages.length;
             modalImg.src = `/images/${currentImages[currentImageIndex].path}`;
+            updateAppState(currentPath, currentImages[currentImageIndex].path.split('/').pop());
         });
 
         let currentImageIndex = 0;
@@ -253,10 +255,12 @@
                     // 右矢印キーで次の画像
                     currentImageIndex = (currentImageIndex + 1) % currentImages.length;
                     modalImg.src = `/images/${currentImages[currentImageIndex].path}`;
+                    updateAppState(currentPath, currentImages[currentImageIndex].path.split('/').pop());
                 } else if (e.key === 'ArrowLeft') {
                     // 左矢印キーで前の画像
                     currentImageIndex = (currentImageIndex - 1 + currentImages.length) % currentImages.length;
                     modalImg.src = `/images/${currentImages[currentImageIndex].path}`;
+                    updateAppState(currentPath, currentImages[currentImageIndex].path.split('/').pop());
                 }
             }
         });
