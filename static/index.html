@@ -111,34 +111,38 @@
         hammer.on('swipeleft', () => {
             if (currentImages.length === 0) return;
             currentImageIndex = (currentImageIndex + 1) % currentImages.length;
-            modalImg.src = `/images/${currentImages[currentImageIndex].path}`;
-            updateAppState(currentPath, currentImages[currentImageIndex].path.split('/').pop());
+                    modalImg.src = `/images/${currentImages[currentImageIndex].path}`;
+                    updateAppState(currentPath, currentImages[currentImageIndex].path.split('/').pop(), true);
         });
         hammer.on('swiperight', () => {
             if (currentImages.length === 0) return;
             currentImageIndex = (currentImageIndex - 1 + currentImages.length) % currentImages.length;
-            modalImg.src = `/images/${currentImages[currentImageIndex].path}`;
-            updateAppState(currentPath, currentImages[currentImageIndex].path.split('/').pop());
+                    modalImg.src = `/images/${currentImages[currentImageIndex].path}`;
+                    updateAppState(currentPath, currentImages[currentImageIndex].path.split('/').pop(), true);
         });
 
         let currentImageIndex = 0;
         let currentImages = [];
 
         // 状態更新関数
-        async function updateAppState(newPath, imageName = null) {
-            console.log('Updating app state:', {newPath, imageName});
+        async function updateAppState(newPath, imageName = null, skipReload = false) {
+            console.log('Updating app state:', {newPath, imageName, skipReload});
             const urlParams = new URLSearchParams();
             if (newPath) urlParams.set('path', newPath);
             if (imageName) urlParams.set('image', imageName);
             
             console.log('New URL params:', urlParams.toString());
             history.pushState({}, '', `?${urlParams.toString()}`);
+            
+            const pathChanged = currentPath !== newPath;
             currentPath = newPath;
             console.log('Current path updated to:', currentPath);
             
-            const items = await fetchItems();
-            console.log('Fetched items:', items);
-            renderItemList(items);
+            if (!skipReload || pathChanged) {
+                const items = await fetchItems();
+                console.log('Fetched items:', items);
+                renderItemList(items);
+            }
         }
 
         // アイテム一覧を表示
@@ -255,12 +259,12 @@
                     // 右矢印キーで次の画像
                     currentImageIndex = (currentImageIndex + 1) % currentImages.length;
                     modalImg.src = `/images/${currentImages[currentImageIndex].path}`;
-                    updateAppState(currentPath, currentImages[currentImageIndex].path.split('/').pop());
+                    updateAppState(currentPath, currentImages[currentImageIndex].path.split('/').pop(), true);
                 } else if (e.key === 'ArrowLeft') {
                     // 左矢印キーで前の画像
                     currentImageIndex = (currentImageIndex - 1 + currentImages.length) % currentImages.length;
                     modalImg.src = `/images/${currentImages[currentImageIndex].path}`;
-                    updateAppState(currentPath, currentImages[currentImageIndex].path.split('/').pop());
+                    updateAppState(currentPath, currentImages[currentImageIndex].path.split('/').pop(), true);
                 }
             }
         });
