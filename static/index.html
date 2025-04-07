@@ -163,7 +163,9 @@
 
           // 現在のスクロール位置を保存
           if (currentPath) {
-            scrollPositions[currentPath] = window.scrollY;
+            const oldScroll = window.scrollY;
+            scrollPositions[currentPath] = oldScroll;
+            console.log(`Saved scroll position for ${currentPath}: ${oldScroll}`);
           }
 
           // パスを更新
@@ -173,6 +175,7 @@
           // 新しいフォルダに遷移した場合はスクロール位置をリセット
           if (pathParam && !scrollPositions[currentPath]) {
             scrollPositions[currentPath] = 0;
+            console.log(`Initialized scroll position for new path ${currentPath} to 0`);
           }
 
           // 画像表示処理 (先に実行)
@@ -204,7 +207,9 @@
 
             renderItemList(items).then(() => {
               // スクロール位置を復元 (常に設定)
-              window.scrollTo(0, scrollPositions[currentPath] || 0);
+              const scrollPos = scrollPositions[currentPath] || 0;
+              console.log(`Restoring scroll position for ${currentPath}: ${scrollPos}`);
+              window.scrollTo(0, scrollPos);
             });
           });
         }
