@@ -41,30 +41,21 @@ app.use(async (ctx: Context, next: Next) => {
       const filePath = join("images", relativePath);
       
       try {
-        // ファイル存在チェック
-        try {
-          await Deno.stat(filePath);
-        } catch (err) {
-          if (err instanceof Deno.errors.NotFound) {
-            console.error(`File not found: ${filePath}`);
-            ctx.response.status = 404;
-            ctx.response.body = { error: "File not found" };
-            return;
-          }
-          throw err;
-        }
-
-        // ファイル配信
-        try {
-          await ctx.send({ 
-            root: Deno.cwd(), 
-            path: filePath
-          });
-        } catch (err) {
-          console.error(`Error serving file ${filePath}:`, err);
-          throw err;
-        }
+        const stat = await Deno.stat(filePath);
+        const etag = `W/"${stat.mtime?.getTime().toString(16)}-${stat.size.toString(16)}"`;
+        ctx.response.headers.set("ETag", etag);
+        
+        await ctx.send({ 
+          root: Deno.cwd(),
+          path: filePath
+        });
       } catch (err) {
+        if (err instanceof Deno.errors.NotFound) {
+          console.error(`File not found: ${filePath}`);
+          ctx.response.status = 404;
+          ctx.response.body = { error: "File not found" };
+          return;
+        }
         console.error(`Error processing image request for ${filePath}:`, err);
         ctx.response.status = 500;
         ctx.response.body = { error: "Internal server error" };
