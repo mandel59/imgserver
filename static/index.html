@@ -82,21 +82,21 @@
             if (currentImages.length === 0 || currentImageIndex === -1) return;
             currentImageIndex = (currentImageIndex + 1) % currentImages.length;
             modalImg.src = `/images/${currentImages[currentImageIndex].path}`;
-            updateAppState(currentPath, currentImages[currentImageIndex].path.split('/').pop(), true);
+            updateAppState(currentPath, currentImages[currentImageIndex].path.split('/').pop());
         });
         hammer.on('swiperight', () => {
             if (currentImages.length === 0 || currentImageIndex === -1) return;
             currentImageIndex = (currentImageIndex - 1 + currentImages.length) % currentImages.length;
             modalImg.src = `/images/${currentImages[currentImageIndex].path}`;
-            updateAppState(currentPath, currentImages[currentImageIndex].path.split('/').pop(), true);
+            updateAppState(currentPath, currentImages[currentImageIndex].path.split('/').pop());
         });
 
         let currentImageIndex = 0;
         let currentImages = [];
 
         // 状態更新関数
-        async function updateAppState(newPath, imageName = null, skipReload = false) {
-            console.log('Updating app state:', {newPath, imageName, skipReload});
+        async function updateAppState(newPath, imageName = null) {
+            console.log('Updating app state:', {newPath, imageName});
             
             // 現在表示されている画像インデックスを保存 (遷移前)
             if (currentPath !== null && currentPath !== undefined) {
@@ -122,7 +122,7 @@
                 console.log(`Initialized scroll position for "${currentPath}" to 0`);
             }
             
-            if (!skipReload || pathChanged) {
+            if (pathChanged) {
                 const items = await fetchItems();
                 console.log('Fetched items:', items);
                 await renderItemList(items);
@@ -158,12 +158,12 @@
                     // 右矢印キーで次の画像
                     currentImageIndex = (currentImageIndex + 1) % currentImages.length;
                     modalImg.src = `/images/${currentImages[currentImageIndex].path}`;
-                    updateAppState(currentPath, currentImages[currentImageIndex].path.split('/').pop(), true);
+                    updateAppState(currentPath, currentImages[currentImageIndex].path.split('/').pop());
                 } else if (e.key === 'ArrowLeft' && currentImageIndex !== -1) {
                     // 左矢印キーで前の画像
                     currentImageIndex = (currentImageIndex - 1 + currentImages.length) % currentImages.length;
                     modalImg.src = `/images/${currentImages[currentImageIndex].path}`;
-                    updateAppState(currentPath, currentImages[currentImageIndex].path.split('/').pop(), true);
+                    updateAppState(currentPath, currentImages[currentImageIndex].path.split('/').pop());
                 }
             }
         });
