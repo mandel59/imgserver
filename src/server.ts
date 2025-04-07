@@ -6,9 +6,12 @@ const router = new Router();
 
 // 静的ファイル配信
 app.use(async (ctx: Context, next: Next) => {
-  const filePath = join("static", ctx.request.url.pathname);
+  let filePath = ctx.request.url.pathname;
+  if (filePath === "/") {
+    filePath = "/index.html";
+  }
   try {
-    await ctx.send({ root: Deno.cwd(), path: filePath });
+    await ctx.send({ root: join(Deno.cwd(), "static"), path: filePath });
   } catch {
     await next();
   }
