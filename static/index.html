@@ -71,12 +71,6 @@
             renderItemList(items);
         });
 
-        // 初期化処理
-        async function init() {
-            const items = await fetchItems();
-            renderItemList(items);
-        }
-
         // モーダル要素を取得
         const modal = document.getElementById('image-modal');
         const modalImg = modal.querySelector('img');
@@ -295,12 +289,8 @@
             restoreFromURL();
         });
 
-        // ページ読み込み時に初期化
-        window.addEventListener('DOMContentLoaded', () => {
-            init().then(() => {
-                restoreFromURL();
-            });
-        });
+        // ページ読み込み時に状態復元
+        window.addEventListener('DOMContentLoaded', restoreFromURL);
     </script>
 </body>
 </html>
