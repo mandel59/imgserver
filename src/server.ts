@@ -112,6 +112,5 @@ app.get("/api/images", async (c) => {
   return c.json(items);
 });
 
-// サーバー起動
-console.log("Server running on http://localhost:8000");
-Deno.serve({ port: 8000 }, app.fetch);
+// fetch エクスポート
+export default app;
