@@ -38,6 +38,16 @@
             padding: 8px 16px;
             cursor: pointer;
         }
+        
+        button:focus-visible, 
+        [tabindex="0"]:focus-visible {
+            outline: 2px solid #4a90e2;
+            outline-offset: 2px;
+        }
+        
+        #image-modal button:focus-visible {
+            outline-color: white;
+        }
     </style>
 </head>
 
@@ -56,7 +66,12 @@
     <!-- モーダル表示要素 -->
     <div id="image-modal"
         style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background-color:rgba(0,0,0,0.9); z-index:1000; justify-content:center; align-items:center; flex-direction:column;">
-        <span style="position:absolute; top:20px; right:30px; color:white; font-size:40px; cursor:pointer;">×</span>
+        <button 
+            style="position:absolute; top:20px; right:30px; color:white; font-size:40px; cursor:pointer; background:none; border:none; padding:0;"
+            aria-label="Close modal"
+            tabindex="0">
+            ×
+        </button>
         <img style="width:100vw; height:100vh; object-fit:contain; padding:20px; box-sizing:border-box;">
     </div>
 
@@ -81,7 +96,7 @@
         // モーダル要素を取得
         const modal = document.getElementById('image-modal');
         const modalImg = modal.querySelector('img');
-        const closeBtn = modal.querySelector('span');
+        const closeBtn = modal.querySelector('button');
 
         // スワイプ操作の設定
         const hammer = new Hammer(modal);
@@ -362,31 +377,83 @@
 
                 if (item.isDirectory) {
                     // ディレクトリ表示
-                    itemElement.innerHTML = `
-                        <div style="font-size: 60px;">📁</div>
-                        <div>${item.name}</div>
-                    `;
-                    itemElement.addEventListener('click', () => {
+                    const folderWrapper = document.createElement('div');
+                    folderWrapper.tabIndex = 0;
+                    folderWrapper.style.width = '100%';
+                    folderWrapper.style.height = '180px';
+                    folderWrapper.style.display = 'flex';
+                    folderWrapper.style.flexDirection = 'column';
+                    folderWrapper.style.alignItems = 'center';
+                    folderWrapper.style.justifyContent = 'center';
+                    
+                    const folderIcon = document.createElement('div');
+                    folderIcon.style.fontSize = '60px';
+                    folderIcon.textContent = '📁';
+                    
+                    const folderName = document.createElement('div');
+                    folderName.textContent = item.name;
+                    
+                    // 共通のフォルダ開処理
+                    const openFolder = () => {
                         updateAppState(item.path);
+                    };
+                    
+                    // クリックで開く
+                    folderWrapper.addEventListener('click', openFolder);
+                    
+                    // キーボードで開く
+                    folderWrapper.addEventListener('keydown', (e) => {
+                        console.log('Key pressed on folder:', e.key);
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            openFolder();
+                        }
                     });
+                    
+                    folderWrapper.appendChild(folderIcon);
+                    folderWrapper.appendChild(folderName);
+                    itemElement.appendChild(folderWrapper);
                 } else {
                     // 画像表示
+                    // 画像をラップするdivを作成
+                    const imgWrapper = document.createElement('div');
+                    imgWrapper.tabIndex = 0;
+                    imgWrapper.style.width = '100%';
+                    imgWrapper.style.height = '180px';
+                    imgWrapper.style.position = 'relative';
+                    
                     const img = document.createElement('img');
                     img.loading = 'lazy';
                     img.src = `/images/${item.path}`;
                     img.style.width = '100%';
-                    img.style.height = '180px';
+                    img.style.height = '100%';
                     img.style.objectFit = 'cover';
-                    img.addEventListener('click', () => {
+                    
+                    // 共通の画像開処理
+                    const openImage = () => {
                         const index = currentImages.findIndex(i => i.path === item.path);
                         currentImageIndex = index;
                         modalImg.src = `/images/${item.path}`;
                         modal.style.display = 'flex';
                         const fileName = item.path.split('/').pop();
-                        console.log('Image clicked:', { path: item.path, fileName });
+                        console.log('Opening image:', { path: item.path, fileName });
                         updateAppState(currentPath, fileName);
+                    };
+                    
+                    // クリックで開く
+                    imgWrapper.addEventListener('click', openImage);
+                    
+                    // キーボードで開く
+                    imgWrapper.addEventListener('keydown', (e) => {
+                        console.log('Key pressed:', e.key);
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            openImage();
+                        }
                     });
-                    itemElement.appendChild(img);
+                    
+                    imgWrapper.appendChild(img);
+                    itemElement.appendChild(imgWrapper);
                     itemElement.appendChild(document.createTextNode(item.name));
                 }
 
