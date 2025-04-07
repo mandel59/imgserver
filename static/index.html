@@ -264,9 +264,8 @@
             // 常にアイテムを取得
             fetchItems().then(items => {
                 console.log('Fetched items:', items);
-                renderItemList(items);
-
-                // 画像のインデックスを検索
+                
+                // 画像のインデックスを先に検索
                 if (imageName) {
                     const fullPath = currentPath ? `${currentPath}/${imageName}` : imageName;
                     console.log('Searching for image:', fullPath);
@@ -279,6 +278,8 @@
                         console.log('Image not found');
                     }
                 }
+
+                renderItemList(items);
             });
         }
 
