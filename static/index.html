@@ -194,6 +194,8 @@
                         currentPath = item.path;
                         const items = await fetchItems();
                         renderItemList(items);
+                        // URLを更新
+                        history.pushState({path: currentPath}, '', `?path=${encodeURIComponent(currentPath)}`);
                     });
                 } else {
                     // 画像表示
@@ -207,6 +209,8 @@
                         currentImageIndex = index;
                         modalImg.src = `/images/${item.path}`;
                         modal.style.display = 'flex';
+                        // URLを更新
+                        history.pushState({imageIndex: index}, '', `?image=${encodeURIComponent(item.path)}`);
                     });
                     itemElement.appendChild(img);
                     itemElement.appendChild(document.createTextNode(item.name));
@@ -239,8 +243,47 @@
             }
         });
 
+        // URLから状態を復元
+        function restoreFromURL() {
+            const params = new URLSearchParams(window.location.search);
+            const imagePath = params.get('image');
+            const pathParam = params.get('path');
+            
+            if (imagePath) {
+                const index = currentImages.findIndex(i => i.path === decodeURIComponent(imagePath));
+                if (index !== -1) {
+                    currentImageIndex = index;
+                    modalImg.src = `/images/${decodeURIComponent(imagePath)}`;
+                    modal.style.display = 'flex';
+                }
+            } else if (pathParam) {
+                currentPath = decodeURIComponent(pathParam);
+                fetchItems().then(items => renderItemList(items));
+            }
+        }
+
+        // 戻る/進む操作に対応
+        window.addEventListener('popstate', (e) => {
+            if (e.state) {
+                if (e.state.imageIndex !== undefined) {
+                    currentImageIndex = e.state.imageIndex;
+                    modalImg.src = `/images/${currentImages[currentImageIndex].path}`;
+                    modal.style.display = 'flex';
+                } else if (e.state.path !== undefined) {
+                    currentPath = e.state.path;
+                    fetchItems().then(items => renderItemList(items));
+                }
+            } else {
+                modal.style.display = 'none';
+            }
+        });
+
         // ページ読み込み時に初期化
-        window.addEventListener('DOMContentLoaded', init);
+        window.addEventListener('DOMContentLoaded', () => {
+            init().then(() => {
+                restoreFromURL();
+            });
+        });
     </script>
 </body>
 </html>
