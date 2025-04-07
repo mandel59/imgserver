@@ -34,23 +34,29 @@ app.use(async (ctx: Context, next: Next) => {
 // APIルート
 router.get("/api/images", async (ctx: Context) => {
   const sortBy = ctx.request.url.searchParams.get("sort") || "name";
-  const images = [];
+  const path = ctx.request.url.searchParams.get("path") || "";
+  const fullPath = join("images", path);
+  const items = [];
   
-  // 画像ファイル情報を収集
-  for await (const entry of Deno.readDir("images")) {
-    if (entry.isFile) {
-      const filePath = join("images", entry.name);
-      const fileInfo = await Deno.stat(filePath);
-      images.push({
-        name: entry.name,
-        modified: fileInfo.mtime?.getTime() || 0,
-        size: fileInfo.size
-      });
-    }
+  // ディレクトリとファイル情報を収集
+  for await (const entry of Deno.readDir(fullPath)) {
+    const itemPath = join(fullPath, entry.name);
+    const itemInfo = await Deno.stat(itemPath);
+    
+    items.push({
+      name: entry.name,
+      isDirectory: entry.isDirectory,
+      modified: itemInfo.mtime?.getTime() || 0,
+      size: itemInfo.size,
+      path: join(path, entry.name)
+    });
   }
 
-  // ソート処理
-  images.sort((a, b) => {
+  // ソート処理 (ディレクトリを先に表示)
+  items.sort((a, b) => {
+    if (a.isDirectory !== b.isDirectory) {
+      return a.isDirectory ? -1 : 1;
+    }
     switch(sortBy) {
       case "date":
         return b.modified - a.modified;
@@ -61,7 +67,7 @@ router.get("/api/images", async (ctx: Context) => {
     }
   });
 
-  ctx.response.body = images.map(img => img.name);
+  ctx.response.body = items;
 });
 
 app.use(router.routes());

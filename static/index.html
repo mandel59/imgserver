@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Image Viewer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -49,23 +50,25 @@
     <div id="image-container"></div>
 
     <script>
-        // 画像一覧を取得
-        async function fetchImages() {
+        let currentPath = '';
+        
+        // アイテム一覧を取得
+        async function fetchItems() {
             const sortOption = document.getElementById('sort-option').value;
-            const response = await fetch(`/api/images?sort=${sortOption}`);
+            const response = await fetch(`/api/images?sort=${sortOption}&path=${encodeURIComponent(currentPath)}`);
             return await response.json();
         }
 
         // ソートオプション変更時の処理
         document.getElementById('sort-option').addEventListener('change', async () => {
-            const images = await fetchImages();
-            renderImageList(images);
+            const items = await fetchItems();
+            renderItemList(items);
         });
 
         // 初期化処理
         async function init() {
-            const images = await fetchImages();
-            renderImageList(images);
+            const items = await fetchItems();
+            renderItemList(items);
         }
 
         // モーダル表示用要素
@@ -100,25 +103,110 @@
         modal.appendChild(modalImg);
         document.body.appendChild(modal);
 
+        // スワイプ操作の設定
+        const hammer = new Hammer(modal);
+        hammer.on('swipeleft', () => {
+            if (currentImages.length === 0) return;
+            currentImageIndex = (currentImageIndex + 1) % currentImages.length;
+            modalImg.src = `/images/${currentImages[currentImageIndex].path}`;
+        });
+        hammer.on('swiperight', () => {
+            if (currentImages.length === 0) return;
+            currentImageIndex = (currentImageIndex - 1 + currentImages.length) % currentImages.length;
+            modalImg.src = `/images/${currentImages[currentImageIndex].path}`;
+        });
+
         let currentImageIndex = 0;
         let currentImages = [];
 
-        // 画像一覧を表示
-        function renderImageList(images) {
+        // アイテム一覧を表示
+        function renderItemList(items) {
             const container = document.getElementById('image-container');
             container.innerHTML = '';
-            currentImages = images;
             
-            images.forEach((image, index) => {
-                const img = document.createElement('img');
-                img.src = `/images/${image}`;
-                img.className = 'image-thumbnail';
-                img.addEventListener('click', () => {
-                    currentImageIndex = index;
-                    modalImg.src = `/images/${image}`;
-                    modal.style.display = 'flex';
+            // パンくずリストを表示
+            const breadcrumbs = document.createElement('div');
+            breadcrumbs.style.marginBottom = '10px';
+            
+            const rootLink = document.createElement('a');
+            rootLink.textContent = 'Home';
+            rootLink.href = '#';
+            rootLink.style.marginRight = '5px';
+            rootLink.addEventListener('click', async (e) => {
+                e.preventDefault();
+                currentPath = '';
+                const items = await fetchItems();
+                renderItemList(items);
+            });
+            breadcrumbs.appendChild(rootLink);
+            
+            if (currentPath) {
+                const parts = currentPath.split('/');
+                let path = '';
+                parts.forEach(part => {
+                    path = path ? `${path}/${part}` : part;
+                    const span = document.createElement('span');
+                    span.textContent = ' > ';
+                    breadcrumbs.appendChild(span);
+                    
+                    const link = document.createElement('a');
+                    link.textContent = part;
+                    link.href = '#';
+                    link.style.marginRight = '5px';
+                    link.addEventListener('click', async (e) => {
+                        e.preventDefault();
+                        currentPath = path;
+                        const items = await fetchItems();
+                        renderItemList(items);
+                    });
+                    breadcrumbs.appendChild(link);
                 });
-                container.appendChild(img);
+            }
+            
+            container.appendChild(breadcrumbs);
+            
+            // アイテムを表示
+            currentImages = items.filter(item => !item.isDirectory);
+            
+            items.forEach(item => {
+                const itemElement = document.createElement('div');
+                itemElement.style.width = '200px';
+                itemElement.style.height = '200px';
+                itemElement.style.display = 'flex';
+                itemElement.style.flexDirection = 'column';
+                itemElement.style.alignItems = 'center';
+                itemElement.style.justifyContent = 'center';
+                itemElement.style.cursor = 'pointer';
+                
+                if (item.isDirectory) {
+                    // ディレクトリ表示
+                    itemElement.innerHTML = `
+                        <div style="font-size: 60px;">📁</div>
+                        <div>${item.name}</div>
+                    `;
+                    itemElement.addEventListener('click', async () => {
+                        currentPath = item.path;
+                        const items = await fetchItems();
+                        renderItemList(items);
+                    });
+                } else {
+                    // 画像表示
+                    const img = document.createElement('img');
+                    img.src = `/images/${item.path}`;
+                    img.style.width = '100%';
+                    img.style.height = '180px';
+                    img.style.objectFit = 'cover';
+                    img.addEventListener('click', () => {
+                        const index = currentImages.findIndex(i => i.path === item.path);
+                        currentImageIndex = index;
+                        modalImg.src = `/images/${item.path}`;
+                        modal.style.display = 'flex';
+                    });
+                    itemElement.appendChild(img);
+                    itemElement.appendChild(document.createTextNode(item.name));
+                }
+                
+                container.appendChild(itemElement);
             });
         }
 
