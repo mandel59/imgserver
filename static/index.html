@@ -87,9 +87,11 @@
         modal.style.flexDirection = 'column';
 
         const modalImg = document.createElement('img');
-        modalImg.style.maxWidth = '100%';
-        modalImg.style.maxHeight = '100%';
+        modalImg.style.width = '100vw';
+        modalImg.style.height = '100vh';
         modalImg.style.objectFit = 'contain';
+        modalImg.style.padding = '20px';
+        modalImg.style.boxSizing = 'border-box';
 
         const closeBtn = document.createElement('span');
         closeBtn.textContent = '×';
