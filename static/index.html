@@ -164,6 +164,8 @@
                         currentPath = path;
                         const items = await fetchItems();
                         renderItemList(items);
+                        // URLを更新
+                        history.pushState({}, '', `?path=${encodeURIComponent(currentPath)}`);
                     });
                     breadcrumbs.appendChild(link);
                 });
@@ -194,8 +196,10 @@
                         currentPath = item.path;
                         const items = await fetchItems();
                         renderItemList(items);
-                        // URLを更新
-                        history.pushState({path: currentPath}, '', `?path=${encodeURIComponent(currentPath)}`);
+                        // URLを更新 (シンプルな形式)
+                        const urlParams = new URLSearchParams();
+                        if (currentPath) urlParams.set('path', currentPath);
+                        history.pushState({}, '', `?${urlParams.toString()}`);
                     });
                 } else {
                     // 画像表示
@@ -209,8 +213,12 @@
                         currentImageIndex = index;
                         modalImg.src = `/images/${item.path}`;
                         modal.style.display = 'flex';
-                        // URLを更新
-                        history.pushState({imageIndex: index}, '', `?image=${encodeURIComponent(item.path)}`);
+                        // URLを更新 (新しい仕様に合わせて)
+                        const urlParams = new URLSearchParams();
+                        if (currentPath) urlParams.set('path', currentPath);
+                        const fileName = item.path.split('/').pop();
+                        urlParams.set('image', fileName);
+                        history.pushState({}, '', `?${urlParams.toString()}`);
                     });
                     itemElement.appendChild(img);
                     itemElement.appendChild(document.createTextNode(item.name));
@@ -243,39 +251,57 @@
             }
         });
 
-        // URLから状態を復元
+        // URLから状態を復元 (新しい仕様に合わせて)
         function restoreFromURL() {
+            console.log('Restoring from URL...');
             const params = new URLSearchParams(window.location.search);
-            const imagePath = params.get('image');
+            const imageName = params.get('image');
             const pathParam = params.get('path');
             
-            if (imagePath) {
-                const index = currentImages.findIndex(i => i.path === decodeURIComponent(imagePath));
-                if (index !== -1) {
-                    currentImageIndex = index;
-                    modalImg.src = `/images/${decodeURIComponent(imagePath)}`;
-                    modal.style.display = 'flex';
-                }
-            } else if (pathParam) {
+            console.log('Current URL params:', {imageName, pathParam});
+            
+            if (pathParam) {
                 currentPath = decodeURIComponent(pathParam);
-                fetchItems().then(items => renderItemList(items));
+                console.log('Restoring path:', currentPath);
+                
+                fetchItems().then(items => {
+                    console.log('Fetched items:', items);
+                    renderItemList(items);
+                    
+                    if (imageName) {
+                        const fullPath = currentPath ? `${currentPath}/${imageName}` : imageName;
+                        console.log('Looking for image:', fullPath);
+                        
+                        const index = currentImages.findIndex(i => i.path === fullPath);
+                        if (index !== -1) {
+                            console.log('Found image at index:', index);
+                            currentImageIndex = index;
+                            modalImg.src = `/images/${fullPath}`;
+                            modal.style.display = 'flex';
+                        } else {
+                            console.log('Image not found in current view');
+                        }
+                    }
+                });
+            } else if (imageName) {
+                console.log('Restoring image only:', imageName);
+                const index = currentImages.findIndex(i => i.path === imageName);
+                if (index !== -1) {
+                    console.log('Found image at index:', index);
+                    currentImageIndex = index;
+                    modalImg.src = `/images/${imageName}`;
+                    modal.style.display = 'flex';
+                } else {
+                    console.log('Image not found in root directory');
+                }
+            } else {
+                console.log('No state to restore');
             }
         }
 
-        // 戻る/進む操作に対応
-        window.addEventListener('popstate', (e) => {
-            if (e.state) {
-                if (e.state.imageIndex !== undefined) {
-                    currentImageIndex = e.state.imageIndex;
-                    modalImg.src = `/images/${currentImages[currentImageIndex].path}`;
-                    modal.style.display = 'flex';
-                } else if (e.state.path !== undefined) {
-                    currentPath = e.state.path;
-                    fetchItems().then(items => renderItemList(items));
-                }
-            } else {
-                modal.style.display = 'none';
-            }
+        // 戻る/進む操作に対応 (新しい仕様に合わせて)
+        window.addEventListener('popstate', () => {
+            restoreFromURL();
         });
 
         // ページ読み込み時に初期化
