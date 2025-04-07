@@ -1,5 +1,5 @@
 import { Application, Router, Context, Next } from "oak";
-import { join } from "https://deno.land/std@0.192.0/path/mod.ts";
+import { join, normalize } from "https://deno.land/std@0.192.0/path/mod.ts";
 
 const app = new Application();
 const router = new Router();
@@ -49,7 +49,7 @@ router.get("/api/images", async (ctx: Context) => {
       isDirectory: isDirectory,
       modified: itemInfo.mtime?.getTime() || 0,
       size: itemInfo.size,
-      path: join(path, entry.name)
+      path: normalize(join(path, entry.name)).replace(/\\/g, '/')
     });
   }
 
