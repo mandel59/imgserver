@@ -176,14 +176,13 @@
                     const urlParams = new URLSearchParams(window.location.search);
                     urlParams.delete('image');
                     history.pushState({}, '', `?${urlParams.toString()}`);
-                } else if (e.key === 'ArrowRight' && currentImageIndex !== -1) {
-                    // 右矢印キーで次の画像
-                    currentImageIndex = (currentImageIndex + 1) % currentImages.length;
-                    modalImg.src = `/images/${currentImages[currentImageIndex].path}`;
-                    updateAppState(currentPath, currentImages[currentImageIndex].path.split('/').pop());
-                } else if (e.key === 'ArrowLeft' && currentImageIndex !== -1) {
-                    // 左矢印キーで前の画像
-                    currentImageIndex = (currentImageIndex - 1 + currentImages.length) % currentImages.length;
+                } else if ((e.key === 'ArrowRight' || e.key === 'ArrowLeft') && currentImageIndex !== -1) {
+                    // モディファイアキーが押されている場合は無視
+                    if (e.shiftKey || e.ctrlKey || e.altKey || e.metaKey) {
+                        return;
+                    }
+                    // 右/左矢印キーで画像切り替え
+                    currentImageIndex = (currentImageIndex + (e.key === 'ArrowRight' ? 1 : -1) + currentImages.length) % currentImages.length;
                     modalImg.src = `/images/${currentImages[currentImageIndex].path}`;
                     updateAppState(currentPath, currentImages[currentImageIndex].path.split('/').pop());
                 }
