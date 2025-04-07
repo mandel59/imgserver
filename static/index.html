@@ -169,6 +169,11 @@
           // パスを更新
           currentPath = pathParam ? decodeURIComponent(pathParam) : '';
           console.log('Restoring path:', currentPath);
+          
+          // 新しいフォルダに遷移した場合はスクロール位置をリセット
+          if (pathParam && !scrollPositions[currentPath]) {
+            scrollPositions[currentPath] = 0;
+          }
 
           // 画像表示処理 (先に実行)
           if (imageName) {
@@ -198,10 +203,8 @@
             }
 
             renderItemList(items).then(() => {
-              // スクロール位置を復元
-              if (scrollPositions[currentPath]) {
-                window.scrollTo(0, scrollPositions[currentPath]);
-              }
+              // スクロール位置を復元 (常に設定)
+              window.scrollTo(0, scrollPositions[currentPath] || 0);
             });
           });
         }
