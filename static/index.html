@@ -115,8 +115,100 @@
             }
         }
 
+
+
+        // モーダルを閉じる
+        closeBtn.addEventListener('click', () => {
+            modal.style.display = 'none';
+            // URLを更新 (画像パラメータを削除)
+            const urlParams = new URLSearchParams(window.location.search);
+            urlParams.delete('image');
+            history.pushState({}, '', `?${urlParams.toString()}`);
+        });
+
+        // キーボード操作
+        document.addEventListener('keydown', (e) => {
+            if (modal.style.display === 'flex') {
+                if (e.key === 'Escape') {
+                    modal.style.display = 'none';
+                    // URLを更新 (画像パラメータを削除)
+                    const urlParams = new URLSearchParams(window.location.search);
+                    urlParams.delete('image');
+                    history.pushState({}, '', `?${urlParams.toString()}`);
+                } else if (e.key === 'ArrowRight' && currentImageIndex !== -1) {
+                    // 右矢印キーで次の画像
+                    currentImageIndex = (currentImageIndex + 1) % currentImages.length;
+                    modalImg.src = `/images/${currentImages[currentImageIndex].path}`;
+                    updateAppState(currentPath, currentImages[currentImageIndex].path.split('/').pop(), true);
+                } else if (e.key === 'ArrowLeft' && currentImageIndex !== -1) {
+                    // 左矢印キーで前の画像
+                    currentImageIndex = (currentImageIndex - 1 + currentImages.length) % currentImages.length;
+                    modalImg.src = `/images/${currentImages[currentImageIndex].path}`;
+                    updateAppState(currentPath, currentImages[currentImageIndex].path.split('/').pop(), true);
+                }
+            }
+        });
+
+        // スクロール位置を保存
+        let scrollPositions = {};
+
+        // URLから状態を復元
+        function restoreFromURL() {
+          console.log('Restoring from URL...');
+          const params = new URLSearchParams(window.location.search);
+          const imageName = params.get('image');
+          const pathParam = params.get('path');
+          
+          console.log('Current URL params:', {imageName, pathParam});
+
+          // 現在のスクロール位置を保存
+          if (currentPath) {
+            scrollPositions[currentPath] = window.scrollY;
+          }
+
+          // パスを更新
+          currentPath = pathParam ? decodeURIComponent(pathParam) : '';
+          console.log('Restoring path:', currentPath);
+
+          // 画像表示処理 (先に実行)
+          if (imageName) {
+            const fullPath = currentPath ? `${currentPath}/${imageName}` : imageName;
+            console.log('Loading image first:', fullPath);
+            currentImageIndex = -1; // 無効値に設定
+            modalImg.src = `/images/${fullPath}`;
+            modal.style.display = 'flex';
+          }
+
+          // アイテムを取得
+          fetchItems().then(items => {
+            console.log('Fetched items:', items);
+            
+            // currentImageIndexが無効値の場合のみインデックス検索
+            if (imageName && currentImageIndex === -1) {
+              const fullPath = currentPath ? `${currentPath}/${imageName}` : imageName;
+              console.log('Searching for image:', fullPath);
+
+              const index = items.findIndex(i => !i.isDirectory && i.path === fullPath);
+              if (index !== -1) {
+                console.log('Found image at index:', index);
+                currentImageIndex = index;
+              } else {
+                console.log('Image not found');
+              }
+            }
+
+            renderItemList(items).then(() => {
+              // スクロール位置を復元
+              if (scrollPositions[currentPath]) {
+                window.scrollTo(0, scrollPositions[currentPath]);
+              }
+            });
+          });
+        }
+
         // アイテム一覧を表示
         function renderItemList(items) {
+          return new Promise((resolve) => {
             const container = document.getElementById('image-container');
             container.innerHTML = '';
             
@@ -204,83 +296,8 @@
                 
                 container.appendChild(itemElement);
             });
-        }
-
-
-        // モーダルを閉じる
-        closeBtn.addEventListener('click', () => {
-            modal.style.display = 'none';
-            // URLを更新 (画像パラメータを削除)
-            const urlParams = new URLSearchParams(window.location.search);
-            urlParams.delete('image');
-            history.pushState({}, '', `?${urlParams.toString()}`);
-        });
-
-        // キーボード操作
-        document.addEventListener('keydown', (e) => {
-            if (modal.style.display === 'flex') {
-                if (e.key === 'Escape') {
-                    modal.style.display = 'none';
-                    // URLを更新 (画像パラメータを削除)
-                    const urlParams = new URLSearchParams(window.location.search);
-                    urlParams.delete('image');
-                    history.pushState({}, '', `?${urlParams.toString()}`);
-                } else if (e.key === 'ArrowRight' && currentImageIndex !== -1) {
-                    // 右矢印キーで次の画像
-                    currentImageIndex = (currentImageIndex + 1) % currentImages.length;
-                    modalImg.src = `/images/${currentImages[currentImageIndex].path}`;
-                    updateAppState(currentPath, currentImages[currentImageIndex].path.split('/').pop(), true);
-                } else if (e.key === 'ArrowLeft' && currentImageIndex !== -1) {
-                    // 左矢印キーで前の画像
-                    currentImageIndex = (currentImageIndex - 1 + currentImages.length) % currentImages.length;
-                    modalImg.src = `/images/${currentImages[currentImageIndex].path}`;
-                    updateAppState(currentPath, currentImages[currentImageIndex].path.split('/').pop(), true);
-                }
-            }
-        });
-
-        // URLから状態を復元
-        function restoreFromURL() {
-            console.log('Restoring from URL...');
-            const params = new URLSearchParams(window.location.search);
-            const imageName = params.get('image');
-            const pathParam = params.get('path');
-            
-            console.log('Current URL params:', {imageName, pathParam});
-
-            // 常にパスを更新
-            currentPath = pathParam ? decodeURIComponent(pathParam) : '';
-            console.log('Restoring path:', currentPath);
-
-            // 画像表示処理 (先に実行)
-            if (imageName) {
-                const fullPath = currentPath ? `${currentPath}/${imageName}` : imageName;
-                console.log('Loading image first:', fullPath);
-                currentImageIndex = -1; // 無効値に設定
-                modalImg.src = `/images/${fullPath}`;
-                modal.style.display = 'flex';
-            }
-
-            // 常にアイテムを取得
-            fetchItems().then(items => {
-                console.log('Fetched items:', items);
-                
-                // currentImageIndexが無効値の場合のみインデックス検索
-                if (imageName && currentImageIndex === -1) {
-                    const fullPath = currentPath ? `${currentPath}/${imageName}` : imageName;
-                    console.log('Searching for image:', fullPath);
-
-                    const index = items.findIndex(i => !i.isDirectory && i.path === fullPath);
-                    if (index !== -1) {
-                        console.log('Found image at index:', index);
-                        currentImageIndex = index;
-                    } else {
-                        console.log('Image not found');
-                    }
-                }
-
-                renderItemList(items);
-            });
+            resolve();
+          });
         }
 
         // 戻る/進む操作に対応 (新しい仕様に合わせて)
