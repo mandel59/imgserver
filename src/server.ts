@@ -41,8 +41,8 @@ router.get("/api/images", async (ctx: Context) => {
   // ディレクトリとファイル情報を収集
   for await (const entry of Deno.readDir(fullPath)) {
     const itemPath = join(fullPath, entry.name);
-    let itemInfo = await Deno.stat(itemPath);
-    let isDirectory = itemInfo.isDirectory;
+    const itemInfo = await Deno.stat(itemPath);
+    const isDirectory = itemInfo.isDirectory;
     
     items.push({
       name: entry.name,
