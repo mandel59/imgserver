@@ -128,9 +128,9 @@
                 await renderItemList(items);
                 
                 // スクロール位置を復元
-                const scrollPos = scrollPositions[currentPath] || 0;
-                console.log(`Restoring scroll position for "${currentPath}": ${scrollPos}`);
-                window.scrollTo(0, scrollPos);
+                const savedIndex = scrollPositions[currentPath] || 0;
+                console.log(`Restoring scroll position for "${currentPath}": index ${savedIndex}`);
+                scrollToImageIndex(savedIndex);
             }
         }
 
@@ -222,9 +222,17 @@
             }
             
             const item = container.children[index];
-            const itemTop = item.getBoundingClientRect().top;
-            const containerTop = container.getBoundingClientRect().top;
-            window.scrollTo(0, window.scrollY + (itemTop - containerTop));
+            const itemRect = item.getBoundingClientRect();
+            const absoluteItemTop = itemRect.top + window.scrollY;
+            
+            // ウィンドウ中央に近づくようにスクロール位置を調整
+            const viewportCenter = window.innerHeight / 2;
+            const scrollPosition = absoluteItemTop - viewportCenter + (itemRect.height / 2);
+            
+            window.scrollTo({
+                top: scrollPosition,
+                behavior: 'auto'
+            });
         }
 
         // URLから状態を復元
