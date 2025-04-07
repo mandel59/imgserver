@@ -163,20 +163,19 @@
             
             if (currentPath) {
                 const parts = currentPath.split('/');
-                let path = '';
-                parts.forEach(part => {
-                    path = path ? `${path}/${part}` : part;
+                parts.forEach((part, i) => {
+                    const currentPartPath = parts.slice(0, i + 1).join('/');
                     const span = document.createElement('span');
                     span.textContent = ' > ';
                     breadcrumbs.appendChild(span);
                     
                     const link = document.createElement('a');
                     link.textContent = part;
-                    link.href = `?path=${encodeURIComponent(path)}`;
+                    link.href = `?path=${encodeURIComponent(currentPartPath)}`;
                     link.style.marginRight = '5px';
                     link.addEventListener('click', (e) => {
                         e.preventDefault();
-                        updateAppState(path);
+                        updateAppState(currentPartPath);
                     });
                     breadcrumbs.appendChild(link);
                 });
