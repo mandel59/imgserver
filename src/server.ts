@@ -1,5 +1,5 @@
-import { Hono } from "hono";
-import { join, normalize } from "https://deno.land/std@0.192.0/path/mod.ts";
+import { Hono } from "@hono/hono";
+import { join, normalize } from "@std/path";
 
 const app = new Hono();
 

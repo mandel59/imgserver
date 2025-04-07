@@ -1,7 +1,0 @@
-{
-  "imports": {
-    "hono": "https://deno.land/x/hono@v3.11.2/mod.ts",
-    "hono/": "https://deno.land/x/hono@v3.11.2/",
-    "http/": "https://deno.land/std@0.192.0/http/"
-  }
-}
