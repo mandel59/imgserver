@@ -222,10 +222,20 @@
             modal.style.display = 'none';
         });
 
-        // ESCキーでモーダルを閉じる
+        // キーボード操作
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                modal.style.display = 'none';
+            if (modal.style.display === 'flex') {
+                if (e.key === 'Escape') {
+                    modal.style.display = 'none';
+                } else if (e.key === 'ArrowRight') {
+                    // 右矢印キーで次の画像
+                    currentImageIndex = (currentImageIndex + 1) % currentImages.length;
+                    modalImg.src = `/images/${currentImages[currentImageIndex].path}`;
+                } else if (e.key === 'ArrowLeft') {
+                    // 左矢印キーで前の画像
+                    currentImageIndex = (currentImageIndex - 1 + currentImages.length) % currentImages.length;
+                    modalImg.src = `/images/${currentImages[currentImageIndex].path}`;
+                }
             }
         });
 
