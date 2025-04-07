@@ -122,6 +122,23 @@
         let currentImageIndex = 0;
         let currentImages = [];
 
+        // 状態更新関数
+        async function updateAppState(newPath, imageName = null) {
+            console.log('Updating app state:', {newPath, imageName});
+            const urlParams = new URLSearchParams();
+            if (newPath) urlParams.set('path', newPath);
+            if (imageName) urlParams.set('image', imageName);
+            
+            console.log('New URL params:', urlParams.toString());
+            history.pushState({}, '', `?${urlParams.toString()}`);
+            currentPath = newPath;
+            console.log('Current path updated to:', currentPath);
+            
+            const items = await fetchItems();
+            console.log('Fetched items:', items);
+            renderItemList(items);
+        }
+
         // アイテム一覧を表示
         function renderItemList(items) {
             const container = document.getElementById('image-container');
@@ -136,13 +153,11 @@
             
             const rootLink = document.createElement('a');
             rootLink.textContent = 'Home';
-            rootLink.href = '#';
+            rootLink.href = `?path=`;
             rootLink.style.marginRight = '5px';
-            rootLink.addEventListener('click', async (e) => {
+            rootLink.addEventListener('click', (e) => {
                 e.preventDefault();
-                currentPath = '';
-                const items = await fetchItems();
-                renderItemList(items);
+                updateAppState('');
             });
             breadcrumbs.appendChild(rootLink);
             
@@ -157,15 +172,11 @@
                     
                     const link = document.createElement('a');
                     link.textContent = part;
-                    link.href = '#';
+                    link.href = `?path=${encodeURIComponent(path)}`;
                     link.style.marginRight = '5px';
-                    link.addEventListener('click', async (e) => {
+                    link.addEventListener('click', (e) => {
                         e.preventDefault();
-                        currentPath = path;
-                        const items = await fetchItems();
-                        renderItemList(items);
-                        // URLを更新
-                        history.pushState({}, '', `?path=${encodeURIComponent(currentPath)}`);
+                        updateAppState(path);
                     });
                     breadcrumbs.appendChild(link);
                 });
@@ -192,14 +203,8 @@
                         <div style="font-size: 60px;">📁</div>
                         <div>${item.name}</div>
                     `;
-                    itemElement.addEventListener('click', async () => {
-                        currentPath = item.path;
-                        const items = await fetchItems();
-                        renderItemList(items);
-                        // URLを更新 (シンプルな形式)
-                        const urlParams = new URLSearchParams();
-                        if (currentPath) urlParams.set('path', currentPath);
-                        history.pushState({}, '', `?${urlParams.toString()}`);
+                    itemElement.addEventListener('click', () => {
+                        updateAppState(item.path);
                     });
                 } else {
                     // 画像表示
@@ -214,12 +219,9 @@
                         currentImageIndex = index;
                         modalImg.src = `/images/${item.path}`;
                         modal.style.display = 'flex';
-                        // URLを更新 (新しい仕様に合わせて)
-                        const urlParams = new URLSearchParams();
-                        if (currentPath) urlParams.set('path', currentPath);
                         const fileName = item.path.split('/').pop();
-                        urlParams.set('image', fileName);
-                        history.pushState({}, '', `?${urlParams.toString()}`);
+                        console.log('Image clicked:', {path: item.path, fileName});
+                        updateAppState(currentPath, fileName);
                     });
                     itemElement.appendChild(img);
                     itemElement.appendChild(document.createTextNode(item.name));
