@@ -97,6 +97,14 @@
         // 状態更新関数
         async function updateAppState(newPath, imageName = null, skipReload = false) {
             console.log('Updating app state:', {newPath, imageName, skipReload});
+            
+            // 現在のスクロール位置を保存 (遷移前)
+            const oldScroll = window.scrollY;
+            if (currentPath !== null && currentPath !== undefined) {
+                scrollPositions[currentPath] = oldScroll;
+                console.log(`Saved scroll position for "${currentPath}": ${oldScroll}`);
+            }
+
             const urlParams = new URLSearchParams();
             if (newPath) urlParams.set('path', newPath);
             if (imageName) urlParams.set('image', imageName);
@@ -108,10 +116,21 @@
             currentPath = newPath;
             console.log('Current path updated to:', currentPath);
             
+            // 新しいパスのスクロール位置を初期化
+            if (!scrollPositions[currentPath]) {
+                scrollPositions[currentPath] = 0;
+                console.log(`Initialized scroll position for "${currentPath}" to 0`);
+            }
+            
             if (!skipReload || pathChanged) {
                 const items = await fetchItems();
                 console.log('Fetched items:', items);
-                renderItemList(items);
+                await renderItemList(items);
+                
+                // スクロール位置を復元
+                const scrollPos = scrollPositions[currentPath] || 0;
+                console.log(`Restoring scroll position for "${currentPath}": ${scrollPos}`);
+                window.scrollTo(0, scrollPos);
             }
         }
 
@@ -161,21 +180,21 @@
           
           console.log('Current URL params:', {imageName, pathParam});
 
-          // 現在のスクロール位置を保存
-          if (currentPath) {
-            const oldScroll = window.scrollY;
+          // 現在のスクロール位置を保存 (rootフォルダも含む)
+          const oldScroll = window.scrollY;
+          if (currentPath !== null && currentPath !== undefined) {
             scrollPositions[currentPath] = oldScroll;
-            console.log(`Saved scroll position for ${currentPath}: ${oldScroll}`);
+            console.log(`Saved scroll position for "${currentPath}": ${oldScroll}`);
           }
 
           // パスを更新
           currentPath = pathParam ? decodeURIComponent(pathParam) : '';
           console.log('Restoring path:', currentPath);
           
-          // 新しいフォルダに遷移した場合はスクロール位置をリセット
-          if (pathParam && !scrollPositions[currentPath]) {
+          // 新しいフォルダに遷移した場合はスクロール位置を初期化
+          if (!scrollPositions[currentPath]) {
             scrollPositions[currentPath] = 0;
-            console.log(`Initialized scroll position for new path ${currentPath} to 0`);
+            console.log(`Initialized scroll position for "${currentPath}" to 0`);
           }
 
           // 画像表示処理 (先に実行)
