@@ -41,11 +41,23 @@ router.get("/api/images", async (ctx: Context) => {
   // ディレクトリとファイル情報を収集
   for await (const entry of Deno.readDir(fullPath)) {
     const itemPath = join(fullPath, entry.name);
-    const itemInfo = await Deno.stat(itemPath);
+    let itemInfo = await Deno.stat(itemPath);
+    let isSymlink = false;
+    let isDirectory = entry.isDirectory;
+    
+    // シンボリックリンクの場合
+    if (itemInfo.isSymlink) {
+      isSymlink = true;
+      const realPath = await Deno.realPath(itemPath);
+      const realInfo = await Deno.stat(realPath);
+      isDirectory = realInfo.isDirectory;
+      itemInfo = realInfo;
+    }
     
     items.push({
       name: entry.name,
-      isDirectory: entry.isDirectory,
+      isDirectory: isDirectory,
+      isSymlink: isSymlink,
       modified: itemInfo.mtime?.getTime() || 0,
       size: itemInfo.size,
       path: join(path, entry.name)
