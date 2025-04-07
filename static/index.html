@@ -352,9 +352,22 @@
                     link.textContent = part;
                     link.href = `?path=${encodeURIComponent(currentPartPath)}`;
                     link.style.marginRight = '5px';
-                    link.addEventListener('click', (e) => {
+                    link.tabIndex = 0;
+                    
+                    // 共通のフォルダ開処理
+                    const navigateToPath = (e) => {
                         e.preventDefault();
                         updateAppState(currentPartPath);
+                    };
+                    
+                    // クリックで開く
+                    link.addEventListener('click', navigateToPath);
+                    
+                    // キーボードで開く
+                    link.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            navigateToPath(e);
+                        }
                     });
                     breadcrumbs.appendChild(link);
                 });
