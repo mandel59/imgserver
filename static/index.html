@@ -265,8 +265,8 @@
             fetchItems().then(items => {
                 console.log('Fetched items:', items);
                 
-                // 画像のインデックスを先に検索
-                if (imageName) {
+                // currentImageIndexが無効値の場合のみインデックス検索
+                if (imageName && currentImageIndex === -1) {
                     const fullPath = currentPath ? `${currentPath}/${imageName}` : imageName;
                     console.log('Searching for image:', fullPath);
 
