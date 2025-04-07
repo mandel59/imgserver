@@ -79,16 +79,16 @@
         // スワイプ操作の設定
         const hammer = new Hammer(modal);
         hammer.on('swipeleft', () => {
-            if (currentImages.length === 0) return;
+            if (currentImages.length === 0 || currentImageIndex === -1) return;
             currentImageIndex = (currentImageIndex + 1) % currentImages.length;
-                    modalImg.src = `/images/${currentImages[currentImageIndex].path}`;
-                    updateAppState(currentPath, currentImages[currentImageIndex].path.split('/').pop(), true);
+            modalImg.src = `/images/${currentImages[currentImageIndex].path}`;
+            updateAppState(currentPath, currentImages[currentImageIndex].path.split('/').pop(), true);
         });
         hammer.on('swiperight', () => {
-            if (currentImages.length === 0) return;
+            if (currentImages.length === 0 || currentImageIndex === -1) return;
             currentImageIndex = (currentImageIndex - 1 + currentImages.length) % currentImages.length;
-                    modalImg.src = `/images/${currentImages[currentImageIndex].path}`;
-                    updateAppState(currentPath, currentImages[currentImageIndex].path.split('/').pop(), true);
+            modalImg.src = `/images/${currentImages[currentImageIndex].path}`;
+            updateAppState(currentPath, currentImages[currentImageIndex].path.split('/').pop(), true);
         });
 
         let currentImageIndex = 0;
@@ -225,12 +225,12 @@
                     const urlParams = new URLSearchParams(window.location.search);
                     urlParams.delete('image');
                     history.pushState({}, '', `?${urlParams.toString()}`);
-                } else if (e.key === 'ArrowRight') {
+                } else if (e.key === 'ArrowRight' && currentImageIndex !== -1) {
                     // 右矢印キーで次の画像
                     currentImageIndex = (currentImageIndex + 1) % currentImages.length;
                     modalImg.src = `/images/${currentImages[currentImageIndex].path}`;
                     updateAppState(currentPath, currentImages[currentImageIndex].path.split('/').pop(), true);
-                } else if (e.key === 'ArrowLeft') {
+                } else if (e.key === 'ArrowLeft' && currentImageIndex !== -1) {
                     // 左矢印キーで前の画像
                     currentImageIndex = (currentImageIndex - 1 + currentImages.length) % currentImages.length;
                     modalImg.src = `/images/${currentImages[currentImageIndex].path}`;
@@ -252,22 +252,29 @@
             currentPath = pathParam ? decodeURIComponent(pathParam) : '';
             console.log('Restoring path:', currentPath);
 
+            // 画像表示処理 (先に実行)
+            if (imageName) {
+                const fullPath = currentPath ? `${currentPath}/${imageName}` : imageName;
+                console.log('Loading image first:', fullPath);
+                currentImageIndex = -1; // 無効値に設定
+                modalImg.src = `/images/${fullPath}`;
+                modal.style.display = 'flex';
+            }
+
             // 常にアイテムを取得
             fetchItems().then(items => {
                 console.log('Fetched items:', items);
                 renderItemList(items);
 
-                // 画像表示処理
+                // 画像のインデックスを検索
                 if (imageName) {
                     const fullPath = currentPath ? `${currentPath}/${imageName}` : imageName;
-                    console.log('Looking for image:', fullPath);
+                    console.log('Searching for image:', fullPath);
 
                     const index = items.findIndex(i => !i.isDirectory && i.path === fullPath);
                     if (index !== -1) {
                         console.log('Found image at index:', index);
                         currentImageIndex = index;
-                        modalImg.src = `/images/${fullPath}`;
-                        modal.style.display = 'flex';
                     } else {
                         console.log('Image not found');
                     }
