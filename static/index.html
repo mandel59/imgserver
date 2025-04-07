@@ -253,41 +253,38 @@
             const pathParam = params.get('path');
             
             console.log('Current URL params:', {imageName, pathParam});
-            
+
+            // パスを更新 (存在する場合)
             if (pathParam) {
                 currentPath = decodeURIComponent(pathParam);
                 console.log('Restoring path:', currentPath);
-                
+            }
+
+            // 画像表示処理
+            if (imageName) {
+                const fullPath = pathParam ? `${currentPath}/${imageName}` : imageName;
+                console.log('Looking for image:', fullPath);
+
                 fetchItems().then(items => {
                     console.log('Fetched items:', items);
                     renderItemList(items);
-                    
-                    if (imageName) {
-                        const fullPath = currentPath ? `${currentPath}/${imageName}` : imageName;
-                        console.log('Looking for image:', fullPath);
-                        
-                        const index = currentImages.findIndex(i => i.path === fullPath);
-                        if (index !== -1) {
-                            console.log('Found image at index:', index);
-                            currentImageIndex = index;
-                            modalImg.src = `/images/${fullPath}`;
-                            modal.style.display = 'flex';
-                        } else {
-                            console.log('Image not found in current view');
-                        }
+
+                    const index = items.findIndex(i => !i.isDirectory && i.path === fullPath);
+                    if (index !== -1) {
+                        console.log('Found image at index:', index);
+                        currentImageIndex = index;
+                        modalImg.src = `/images/${fullPath}`;
+                        modal.style.display = 'flex';
+                    } else {
+                        console.log('Image not found');
                     }
                 });
-            } else if (imageName) {
-                console.log('Restoring image only:', imageName);
-                const index = currentImages.findIndex(i => i.path === imageName);
-                if (index !== -1) {
-                    console.log('Found image at index:', index);
-                    currentImageIndex = index;
-                    modalImg.src = `/images/${imageName}`;
-                    modal.style.display = 'flex';
-                } else {
-                    console.log('Image not found in root directory');
-                }
+            } else if (pathParam) {
+                // 画像なしでパスのみの場合
+                fetchItems().then(items => {
+                    console.log('Fetched items:', items);
+                    renderItemList(items);
+                });
             } else {
                 console.log('No state to restore');
             }
