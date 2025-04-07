@@ -42,6 +42,14 @@ app.use(async (ctx: Context, next: Next) => {
       
       try {
         const stat = await Deno.stat(filePath);
+        // 通常ファイルでない場合は404エラー
+        if (!stat.isFile) {
+          console.error(`Not a regular file: ${filePath}`);
+          ctx.response.status = 404;
+          ctx.response.body = { error: "File not found" };
+          return;
+        }
+
         const etag = `W/"${stat.mtime?.getTime().toString(16)}-${stat.size.toString(16)}"`;
         ctx.response.headers.set("ETag", etag);
 
