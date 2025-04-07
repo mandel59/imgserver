@@ -47,6 +47,12 @@
 
     <div id="breadcrumbs-container"></div>
 
+    <!-- モーダル表示要素 -->
+    <div id="image-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background-color:rgba(0,0,0,0.9); z-index:1000; justify-content:center; align-items:center; flex-direction:column;">
+        <span style="position:absolute; top:20px; right:30px; color:white; font-size:40px; cursor:pointer;">×</span>
+        <img style="width:100vw; height:100vh; object-fit:contain; padding:20px; box-sizing:border-box;">
+    </div>
+
     <div id="image-container"></div>
 
     <script>
@@ -71,40 +77,10 @@
             renderItemList(items);
         }
 
-        // モーダル表示用要素
-        const modal = document.createElement('div');
-        modal.id = 'image-modal';
-        modal.style.display = 'none';
-        modal.style.position = 'fixed';
-        modal.style.top = '0';
-        modal.style.left = '0';
-        modal.style.width = '100%';
-        modal.style.height = '100%';
-        modal.style.backgroundColor = 'rgba(0,0,0,0.9)';
-        modal.style.zIndex = '1000';
-        modal.style.justifyContent = 'center';
-        modal.style.alignItems = 'center';
-        modal.style.flexDirection = 'column';
-
-        const modalImg = document.createElement('img');
-        modalImg.style.width = '100vw';
-        modalImg.style.height = '100vh';
-        modalImg.style.objectFit = 'contain';
-        modalImg.style.padding = '20px';
-        modalImg.style.boxSizing = 'border-box';
-
-        const closeBtn = document.createElement('span');
-        closeBtn.textContent = '×';
-        closeBtn.style.position = 'absolute';
-        closeBtn.style.top = '20px';
-        closeBtn.style.right = '30px';
-        closeBtn.style.color = 'white';
-        closeBtn.style.fontSize = '40px';
-        closeBtn.style.cursor = 'pointer';
-
-        modal.appendChild(closeBtn);
-        modal.appendChild(modalImg);
-        document.body.appendChild(modal);
+        // モーダル要素を取得
+        const modal = document.getElementById('image-modal');
+        const modalImg = modal.querySelector('img');
+        const closeBtn = modal.querySelector('span');
 
         // スワイプ操作の設定
         const hammer = new Hammer(modal);
