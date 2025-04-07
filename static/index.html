@@ -394,23 +394,24 @@
             items.forEach(item => {
                 const itemElement = document.createElement('div');
                 itemElement.style.width = '200px';
-                itemElement.style.height = '200px';
+                itemElement.style.height = '222px'; // ファイル名表示領域を含めた高さ
                 itemElement.style.display = 'flex';
                 itemElement.style.flexDirection = 'column';
                 itemElement.style.alignItems = 'center';
-                itemElement.style.justifyContent = 'center';
                 itemElement.style.cursor = 'pointer';
+                itemElement.style.marginBottom = '10px';
 
                 if (item.isDirectory) {
                     // ディレクトリ表示
                     const folderWrapper = document.createElement('div');
                     folderWrapper.tabIndex = 0;
-                    folderWrapper.style.width = '100%';
+                    folderWrapper.style.width = '180px';
                     folderWrapper.style.height = '180px';
                     folderWrapper.style.display = 'flex';
                     folderWrapper.style.flexDirection = 'column';
                     folderWrapper.style.alignItems = 'center';
                     folderWrapper.style.justifyContent = 'center';
+                    folderWrapper.style.margin = '0 auto';
                     
                     const folderIcon = document.createElement('div');
                     folderIcon.style.fontSize = '60px';
@@ -444,9 +445,11 @@
                     // 画像をラップするdivを作成
                     const imgWrapper = document.createElement('div');
                     imgWrapper.tabIndex = 0;
-                    imgWrapper.style.width = '100%';
+                    imgWrapper.style.width = '180px';
                     imgWrapper.style.height = '180px';
                     imgWrapper.style.position = 'relative';
+                    imgWrapper.style.margin = '0 auto';
+                    imgWrapper.style.overflow = 'hidden';
                     
                     const img = document.createElement('img');
                     img.loading = 'lazy';
@@ -479,8 +482,23 @@
                     });
                     
                     imgWrapper.appendChild(img);
+                    // ファイル名表示用のdivを作成
+                    const fileNameDiv = document.createElement('div');
+                    fileNameDiv.textContent = item.name;
+                    fileNameDiv.style.width = '180px';
+                    fileNameDiv.style.height = '42px';
+                    fileNameDiv.style.wordWrap = 'break-word';
+                    fileNameDiv.style.textAlign = 'center';
+                    fileNameDiv.style.padding = '5px';
+                    fileNameDiv.style.boxSizing = 'border-box';
+                    fileNameDiv.style.overflow = 'hidden';
+                    fileNameDiv.style.textOverflow = 'ellipsis';
+                    fileNameDiv.style.display = '-webkit-box';
+                    fileNameDiv.style.webkitLineClamp = '2';
+                    fileNameDiv.style.webkitBoxOrient = 'vertical';
+                    
                     itemElement.appendChild(imgWrapper);
-                    itemElement.appendChild(document.createTextNode(item.name));
+                    itemElement.appendChild(fileNameDiv);
                 }
 
                 container.appendChild(itemElement);
