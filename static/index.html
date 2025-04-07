@@ -334,9 +334,22 @@
             rootLink.textContent = 'Home';
             rootLink.href = `?path=`;
             rootLink.style.marginRight = '5px';
-            rootLink.addEventListener('click', (e) => {
+            rootLink.tabIndex = 0;
+            
+            // 共通のフォルダ開処理
+            const navigateToRoot = (e) => {
                 e.preventDefault();
                 updateAppState('');
+            };
+            
+            // クリックで開く
+            rootLink.addEventListener('click', navigateToRoot);
+            
+            // キーボードで開く
+            rootLink.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    navigateToRoot(e);
+                }
             });
             breadcrumbs.appendChild(rootLink);
 
