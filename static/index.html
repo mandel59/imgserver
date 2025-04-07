@@ -225,9 +225,9 @@
             const itemRect = item.getBoundingClientRect();
             const absoluteItemTop = itemRect.top + window.scrollY;
             
-            // ウィンドウ中央に近づくようにスクロール位置を調整
-            const viewportCenter = window.innerHeight / 2;
-            const scrollPosition = absoluteItemTop - viewportCenter + (itemRect.height / 2);
+            // ビューポートの表示範囲閾値（上側）に合わせてスクロール位置を調整
+            const visibleTopThreshold = window.innerHeight * 0.2;
+            const scrollPosition = absoluteItemTop - visibleTopThreshold;
             
             window.scrollTo({
                 top: scrollPosition,
