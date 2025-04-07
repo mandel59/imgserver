@@ -44,7 +44,14 @@ app.use(async (ctx: Context, next: Next) => {
         const stat = await Deno.stat(filePath);
         const etag = `W/"${stat.mtime?.getTime().toString(16)}-${stat.size.toString(16)}"`;
         ctx.response.headers.set("ETag", etag);
-        
+
+        // If-None-Matchヘッダーをチェック
+        const ifNoneMatch = ctx.request.headers.get("If-None-Match");
+        if (ifNoneMatch === etag) {
+          ctx.response.status = 304; // Not Modified
+          return;
+        }
+
         await ctx.send({ 
           root: Deno.cwd(),
           path: filePath
