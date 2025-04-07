@@ -291,10 +291,9 @@
           await renderItemList(items);
         }
 
-        // アイテム一覧を表示
-        function renderItemList(items) {
-          return new Promise((resolve) => {
-            const container = document.getElementById('image-container');
+        // アイテム一覧を表示 (async版)
+        async function renderItemList(items) {
+          const container = document.getElementById('image-container');
             container.innerHTML = '';
             
             // パンくずリストを表示
@@ -381,8 +380,6 @@
                 
                 container.appendChild(itemElement);
             });
-            resolve();
-          });
         }
 
         // 戻る/進む操作に対応 (新しい仕様に合わせて)
