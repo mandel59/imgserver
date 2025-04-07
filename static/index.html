@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,32 +13,37 @@
             margin: 0 auto;
             padding: 20px;
         }
+
         #image-container {
             display: flex;
             flex-wrap: wrap;
             gap: 10px;
             margin-bottom: 20px;
         }
+
         .image-thumbnail {
             width: 200px;
             height: 200px;
             object-fit: cover;
             cursor: pointer;
         }
+
         #controls {
             display: flex;
             gap: 10px;
             margin-bottom: 20px;
         }
+
         button {
             padding: 8px 16px;
             cursor: pointer;
         }
     </style>
 </head>
+
 <body>
     <h1>Image Viewer</h1>
-    
+
     <div id="controls">
         <select id="sort-option">
             <option value="name">名前順</option>
@@ -48,7 +54,8 @@
     <div id="breadcrumbs-container"></div>
 
     <!-- モーダル表示要素 -->
-    <div id="image-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background-color:rgba(0,0,0,0.9); z-index:1000; justify-content:center; align-items:center; flex-direction:column;">
+    <div id="image-modal"
+        style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background-color:rgba(0,0,0,0.9); z-index:1000; justify-content:center; align-items:center; flex-direction:column;">
         <span style="position:absolute; top:20px; right:30px; color:white; font-size:40px; cursor:pointer;">×</span>
         <img style="width:100vw; height:100vh; object-fit:contain; padding:20px; box-sizing:border-box;">
     </div>
@@ -57,7 +64,7 @@
 
     <script>
         let currentPath = '';
-        
+
         // アイテム一覧を取得
         async function fetchItems() {
             const sortOption = document.getElementById('sort-option').value;
@@ -96,8 +103,8 @@
 
         // 状態更新関数
         async function updateAppState(newPath, imageName = null) {
-            console.log('Updating app state:', {newPath, imageName});
-            
+            console.log('Updating app state:', { newPath, imageName });
+
             // 現在表示されている画像インデックスを保存 (遷移前)
             if (currentPath !== null && currentPath !== undefined) {
                 const topIndex = getTopVisibleImageIndex();
@@ -108,25 +115,25 @@
             const urlParams = new URLSearchParams();
             if (newPath) urlParams.set('path', newPath);
             if (imageName) urlParams.set('image', imageName);
-            
+
             console.log('New URL params:', urlParams.toString());
             history.pushState({}, '', `?${urlParams.toString()}`);
-            
+
             const pathChanged = currentPath !== newPath;
             currentPath = newPath;
             console.log('Current path updated to:', currentPath);
-            
+
             // 新しいパスのスクロール位置を初期化
             if (!scrollPositions[currentPath]) {
                 scrollPositions[currentPath] = 0;
                 console.log(`Initialized scroll position for "${currentPath}" to 0`);
             }
-            
+
             if (pathChanged) {
                 const items = await fetchItems();
                 console.log('Fetched items:', items);
                 await renderItemList(items);
-                
+
                 // スクロール位置を復元
                 const savedIndex = scrollPositions[currentPath] || 0;
                 console.log(`Restoring scroll position for "${currentPath}": index ${savedIndex}`);
@@ -170,37 +177,37 @@
 
         // スクロール位置を保存 (画像インデックス方式)
         let scrollPositions = {};
-        
+
         // 表示されている一番上の画像インデックスを取得 (スクロール範囲に表示されているもの)
         function getTopVisibleImageIndex() {
             const container = document.getElementById('image-container');
             const items = container.children;
             const containerTop = container.getBoundingClientRect().top;
             const viewportHeight = window.innerHeight;
-            
+
             // 表示範囲の閾値 (ビューポートの上から20%～80%を表示範囲とみなす)
             const visibleTopThreshold = viewportHeight * 0.2;
             const visibleBottomThreshold = viewportHeight * 0.8;
-            
+
             for (let i = 0; i < items.length; i++) {
                 const item = items[i];
                 const itemRect = item.getBoundingClientRect();
-                
+
                 // アイテムの上端と下端が表示範囲内にあるかチェック
                 const isTopVisible = itemRect.top >= visibleTopThreshold && itemRect.top <= visibleBottomThreshold;
                 const isBottomVisible = itemRect.bottom >= visibleTopThreshold && itemRect.bottom <= visibleBottomThreshold;
-                
+
                 // アイテムの一部でも表示範囲内にあればそのインデックスを返す
-                if (isTopVisible || isBottomVisible || 
+                if (isTopVisible || isBottomVisible ||
                     (itemRect.top <= visibleTopThreshold && itemRect.bottom >= visibleBottomThreshold)) {
                     return i;
                 }
             }
-            
+
             // 表示範囲内にない場合はスクロール位置に最も近いアイテムを返す
             let closestIndex = 0;
             let minDistance = Infinity;
-            
+
             for (let i = 0; i < items.length; i++) {
                 const itemRect = items[i].getBoundingClientRect();
                 const distance = Math.abs(itemRect.top - visibleTopThreshold);
@@ -209,10 +216,10 @@
                     closestIndex = i;
                 }
             }
-            
+
             return closestIndex;
         }
-        
+
         // 画像インデックスからスクロール位置を計算
         function scrollToImageIndex(index) {
             const container = document.getElementById('image-container');
@@ -220,15 +227,15 @@
                 window.scrollTo(0, 0);
                 return;
             }
-            
+
             const item = container.children[index];
             const itemRect = item.getBoundingClientRect();
             const absoluteItemTop = itemRect.top + window.scrollY;
-            
+
             // ビューポートの表示範囲閾値（上側）に合わせてスクロール位置を調整
             const visibleTopThreshold = window.innerHeight * 0.2;
             const scrollPosition = absoluteItemTop - visibleTopThreshold;
-            
+
             window.scrollTo({
                 top: scrollPosition,
                 behavior: 'auto'
@@ -237,77 +244,77 @@
 
         // URLから状態を復元
         async function restoreFromURL() {
-          console.log('Restoring from URL...');
-          const params = new URLSearchParams(window.location.search);
-          const imageName = params.get('image');
-          const pathParam = params.get('path');
-          
-          console.log('Current URL params:', {imageName, pathParam});
+            console.log('Restoring from URL...');
+            const params = new URLSearchParams(window.location.search);
+            const imageName = params.get('image');
+            const pathParam = params.get('path');
 
-          // 現在表示されている一番上の画像インデックスを保存
-          if (currentPath !== null && currentPath !== undefined) {
-            const topIndex = getTopVisibleImageIndex();
-            scrollPositions[currentPath] = topIndex;
-            console.log(`Saved top image index for "${currentPath}": ${topIndex}`);
-          }
+            console.log('Current URL params:', { imageName, pathParam });
 
-          // パスを更新
-          currentPath = pathParam ? decodeURIComponent(pathParam) : '';
-          console.log('Restoring path:', currentPath);
-          
-          // 新しいフォルダに遷移した場合はスクロール位置を初期化
-          if (!scrollPositions[currentPath]) {
-            scrollPositions[currentPath] = 0;
-            console.log(`Initialized scroll position for "${currentPath}" to 0`);
-          }
-
-          // 画像表示処理 (先に実行)
-          if (imageName) {
-            const fullPath = currentPath ? `${currentPath}/${imageName}` : imageName;
-            console.log('Loading image first:', fullPath);
-            currentImageIndex = -1; // 無効値に設定
-            modalImg.src = `/images/${fullPath}`;
-            modal.style.display = 'flex';
-          }
-
-          // アイテムを取得
-          const items = await fetchItems();
-          console.log('Fetched items:', items);
-          
-          // currentImageIndexが無効値の場合のみインデックス検索
-          if (imageName && currentImageIndex === -1) {
-            const fullPath = currentPath ? `${currentPath}/${imageName}` : imageName;
-            console.log('Searching for image:', fullPath);
-
-            const index = items.findIndex(i => !i.isDirectory && i.path === fullPath);
-            if (index !== -1) {
-              console.log('Found image at index:', index);
-              currentImageIndex = index;
-            } else {
-              console.log('Image not found');
+            // 現在表示されている一番上の画像インデックスを保存
+            if (currentPath !== null && currentPath !== undefined) {
+                const topIndex = getTopVisibleImageIndex();
+                scrollPositions[currentPath] = topIndex;
+                console.log(`Saved top image index for "${currentPath}": ${topIndex}`);
             }
-          }
 
-          await renderItemList(items);
+            // パスを更新
+            currentPath = pathParam ? decodeURIComponent(pathParam) : '';
+            console.log('Restoring path:', currentPath);
 
-          // スクロール位置を復元
-          const savedIndex = scrollPositions[currentPath] || 0;
-          console.log(`Restoring scroll position for "${currentPath}": index ${savedIndex}`);
-          scrollToImageIndex(savedIndex);
+            // 新しいフォルダに遷移した場合はスクロール位置を初期化
+            if (!scrollPositions[currentPath]) {
+                scrollPositions[currentPath] = 0;
+                console.log(`Initialized scroll position for "${currentPath}" to 0`);
+            }
+
+            // 画像表示処理 (先に実行)
+            if (imageName) {
+                const fullPath = currentPath ? `${currentPath}/${imageName}` : imageName;
+                console.log('Loading image first:', fullPath);
+                currentImageIndex = -1; // 無効値に設定
+                modalImg.src = `/images/${fullPath}`;
+                modal.style.display = 'flex';
+            }
+
+            // アイテムを取得
+            const items = await fetchItems();
+            console.log('Fetched items:', items);
+
+            // currentImageIndexが無効値の場合のみインデックス検索
+            if (imageName && currentImageIndex === -1) {
+                const fullPath = currentPath ? `${currentPath}/${imageName}` : imageName;
+                console.log('Searching for image:', fullPath);
+
+                const index = items.findIndex(i => !i.isDirectory && i.path === fullPath);
+                if (index !== -1) {
+                    console.log('Found image at index:', index);
+                    currentImageIndex = index;
+                } else {
+                    console.log('Image not found');
+                }
+            }
+
+            await renderItemList(items);
+
+            // スクロール位置を復元
+            const savedIndex = scrollPositions[currentPath] || 0;
+            console.log(`Restoring scroll position for "${currentPath}": index ${savedIndex}`);
+            scrollToImageIndex(savedIndex);
         }
 
         // アイテム一覧を表示 (async版)
         async function renderItemList(items) {
-          const container = document.getElementById('image-container');
+            const container = document.getElementById('image-container');
             container.innerHTML = '';
-            
+
             // パンくずリストを表示
             const breadcrumbsContainer = document.getElementById('breadcrumbs-container');
             breadcrumbsContainer.innerHTML = '';
-            
+
             const breadcrumbs = document.createElement('div');
             breadcrumbs.style.marginBottom = '10px';
-            
+
             const rootLink = document.createElement('a');
             rootLink.textContent = 'Home';
             rootLink.href = `?path=`;
@@ -317,7 +324,7 @@
                 updateAppState('');
             });
             breadcrumbs.appendChild(rootLink);
-            
+
             if (currentPath) {
                 const parts = currentPath.split('/');
                 parts.forEach((part, i) => {
@@ -325,7 +332,7 @@
                     const span = document.createElement('span');
                     span.textContent = ' > ';
                     breadcrumbs.appendChild(span);
-                    
+
                     const link = document.createElement('a');
                     link.textContent = part;
                     link.href = `?path=${encodeURIComponent(currentPartPath)}`;
@@ -337,12 +344,12 @@
                     breadcrumbs.appendChild(link);
                 });
             }
-            
+
             breadcrumbsContainer.appendChild(breadcrumbs);
-            
+
             // アイテムを表示
             currentImages = items.filter(item => !item.isDirectory);
-            
+
             items.forEach(item => {
                 const itemElement = document.createElement('div');
                 itemElement.style.width = '200px';
@@ -352,7 +359,7 @@
                 itemElement.style.alignItems = 'center';
                 itemElement.style.justifyContent = 'center';
                 itemElement.style.cursor = 'pointer';
-                
+
                 if (item.isDirectory) {
                     // ディレクトリ表示
                     itemElement.innerHTML = `
@@ -376,13 +383,13 @@
                         modalImg.src = `/images/${item.path}`;
                         modal.style.display = 'flex';
                         const fileName = item.path.split('/').pop();
-                        console.log('Image clicked:', {path: item.path, fileName});
+                        console.log('Image clicked:', { path: item.path, fileName });
                         updateAppState(currentPath, fileName);
                     });
                     itemElement.appendChild(img);
                     itemElement.appendChild(document.createTextNode(item.name));
                 }
-                
+
                 container.appendChild(itemElement);
             });
         }
@@ -398,4 +405,5 @@
         window.addEventListener('DOMContentLoaded', restoreFromURL);
     </script>
 </body>
+
 </html>
