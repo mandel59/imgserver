@@ -228,7 +228,7 @@
         }
 
         // URLから状態を復元
-        function restoreFromURL() {
+        async function restoreFromURL() {
           console.log('Restoring from URL...');
           const params = new URLSearchParams(window.location.search);
           const imageName = params.get('image');
@@ -263,30 +263,24 @@
           }
 
           // アイテムを取得
-          fetchItems().then(items => {
-            console.log('Fetched items:', items);
-            
-            // currentImageIndexが無効値の場合のみインデックス検索
-            if (imageName && currentImageIndex === -1) {
-              const fullPath = currentPath ? `${currentPath}/${imageName}` : imageName;
-              console.log('Searching for image:', fullPath);
+          const items = await fetchItems();
+          console.log('Fetched items:', items);
+          
+          // currentImageIndexが無効値の場合のみインデックス検索
+          if (imageName && currentImageIndex === -1) {
+            const fullPath = currentPath ? `${currentPath}/${imageName}` : imageName;
+            console.log('Searching for image:', fullPath);
 
-              const index = items.findIndex(i => !i.isDirectory && i.path === fullPath);
-              if (index !== -1) {
-                console.log('Found image at index:', index);
-                currentImageIndex = index;
-              } else {
-                console.log('Image not found');
-              }
+            const index = items.findIndex(i => !i.isDirectory && i.path === fullPath);
+            if (index !== -1) {
+              console.log('Found image at index:', index);
+              currentImageIndex = index;
+            } else {
+              console.log('Image not found');
             }
+          }
 
-            renderItemList(items).then(() => {
-                // スクロール位置を復元 (保存された画像インデックスから)
-                const savedIndex = scrollPositions[currentPath] || 0;
-                console.log(`Restoring scroll position for "${currentPath}" using index: ${savedIndex}`);
-                scrollToImageIndex(savedIndex);
-            });
-          });
+          await renderItemList(items);
         }
 
         // アイテム一覧を表示
@@ -384,10 +378,10 @@
         }
 
         // 戻る/進む操作に対応 (新しい仕様に合わせて)
-        window.addEventListener('popstate', () => {
+        window.addEventListener('popstate', async () => {
             // モーダルを閉じてから状態復元
             modal.style.display = 'none';
-            restoreFromURL();
+            await restoreFromURL();
         });
 
         // ページ読み込み時に状態復元
