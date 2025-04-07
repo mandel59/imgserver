@@ -30,11 +30,12 @@ app.use(async (ctx: Context, next: Next) => {
     if (ctx.request.url.pathname.startsWith("/images/")) {
       const relativePath = ctx.request.url.pathname.replace("/images/", "");
       
-      // セキュリティチェック
-      if (relativePath.includes('../') || relativePath.includes('..\\')) {
+      // セキュリティチェックと隠しファイルチェック
+      if (relativePath.includes('../') || relativePath.includes('..\\') || 
+          relativePath.split('/').some(part => part.startsWith('.'))) {
         console.error(`Invalid path attempt: ${relativePath}`);
-        ctx.response.status = 400;
-        ctx.response.body = { error: "Invalid path" };
+        ctx.response.status = 404;
+        ctx.response.body = { error: "File not found" };
         return;
       }
 
@@ -87,8 +88,13 @@ router.get("/api/images", async (ctx: Context) => {
   const fullPath = join("images", path);
   const items = [];
   
-  // ディレクトリとファイル情報を収集
+  // ディレクトリとファイル情報を収集 (隠しファイルは除外)
   for await (const entry of Deno.readDir(fullPath)) {
+    // 隠しファイル(.で始まる)はスキップ
+    if (entry.name.startsWith('.')) {
+      continue;
+    }
+    
     const itemPath = join(fullPath, entry.name);
     const itemInfo = await Deno.stat(itemPath);
     const isDirectory = itemInfo.isDirectory;
