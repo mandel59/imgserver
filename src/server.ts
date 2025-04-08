@@ -2,6 +2,7 @@ import Bun from "bun";
 import { Hono } from "hono";
 import { join, normalize } from "node:path";
 import { readdir } from "node:fs/promises";
+import sharp from "sharp";
 
 const app = new Hono();
 
@@ -18,8 +19,11 @@ app.get("/images/*", async (c) => {
   const relativePath = c.req.path.replace("/images/", "");
 
   // セキュリティチェックと隠しファイルチェック
-  if (relativePath.includes('../') || relativePath.includes('..\\') ||
-    relativePath.split('/').some((part: string) => part.startsWith('.'))) {
+  if (
+    relativePath.includes("../") ||
+    relativePath.includes("..\\") ||
+    relativePath.split("/").some((part: string) => part.startsWith("."))
+  ) {
     console.error(`Invalid path attempt: ${relativePath}`);
     return c.json({ error: "File not found" }, 404);
   }
@@ -36,7 +40,9 @@ app.get("/images/*", async (c) => {
       return c.json({ error: "File not found" }, 404);
     }
 
-    const etag = `W/"${stat.mtime?.getTime().toString(16)}-${stat.size.toString(16)}"`;
+    const etag = `W/"${stat.mtime?.getTime().toString(16)}-${stat.size.toString(
+      16
+    )}"`;
     c.header("ETag", etag);
 
     // If-None-Matchヘッダーをチェック
@@ -45,13 +51,19 @@ app.get("/images/*", async (c) => {
       return new Response(null, { status: 304 }); // Not Modified
     }
 
-    return new Response(file);
+    // sharpを使ってメタデータを除去する
+    const image = sharp(filePath);
+    return new Response(await image.toBuffer());
   } catch (err) {
     if ((err as any)?.code == "ENOENT") {
       console.error(`File not found: ${filePath}`);
       return c.json({ error: "File not found" }, 404);
     }
-    console.error(`Error processing image request for ${filePath}:`, err?.constructor, err);
+    console.error(
+      `Error processing image request for ${filePath}:`,
+      err?.constructor,
+      err
+    );
     return c.json({ error: "Internal server error" }, 500);
   }
 });
@@ -65,7 +77,7 @@ app.get("/api/images", async (c) => {
   // ディレクトリとファイル情報を収集 (隠しファイルは除外)
   for (const entry of await readdir(fullPath)) {
     // 隠しファイル(.で始まる)はスキップ
-    if (entry.startsWith('.')) {
+    if (entry.startsWith(".")) {
       continue;
     }
 
@@ -78,7 +90,7 @@ app.get("/api/images", async (c) => {
       isDirectory: isDirectory,
       modified: itemInfo.mtime?.getTime() || 0,
       size: itemInfo.size,
-      path: normalize(join(path, entry)).replace(/\\/g, '/')
+      path: normalize(join(path, entry)).replace(/\\/g, "/"),
     });
   }
 
