@@ -1,8 +1,9 @@
-import Bun from "bun";
 import { Hono } from "hono";
 import { logger } from "hono/logger";
+import { etag } from "hono/etag";
+import { stream } from "hono/streaming";
 import { join, normalize } from "node:path/posix";
-import { readdir } from "node:fs/promises";
+import { readdir, stat } from "node:fs/promises";
 import sharp from "sharp";
 
 const app = new Hono();
@@ -11,7 +12,7 @@ const app = new Hono();
 app.use(logger());
 
 // 画像ファイル配信 (エラーハンドリング強化版)
-app.get("/images/*", async (c) => {
+app.get("/images/*", etag(), async (c) => {
   const relativePath = c.req.path.replace(/^\/images\//, "");
 
   const filePath = join("images", relativePath);
@@ -27,29 +28,24 @@ app.get("/images/*", async (c) => {
   }
 
   try {
-    const file = Bun.file(filePath);
-    const stat = await file.stat();
+    const fileInfo = await stat(filePath);
 
     // 通常ファイルでない場合は404エラー
-    if (!stat.isFile) {
+    if (!fileInfo.isFile) {
       console.error(`Not a regular file: ${filePath}`);
       return c.json({ error: "File not found" }, 404);
     }
 
-    const etag = `W/"${stat.mtime?.getTime().toString(16)}-${stat.size.toString(
-      16
-    )}"`;
-    c.header("ETag", etag);
-
-    // If-None-Matchヘッダーをチェック
-    const ifNoneMatch = c.req.header("If-None-Match");
-    if (ifNoneMatch === etag) {
-      return new Response(null, { status: 304 }); // Not Modified
-    }
+    // ファイルの更新時刻とサイズからETag生成
+    const mtime = fileInfo.mtime?.getTime();
+    const fileSize = fileInfo.size;
+    c.header("ETag", `"${mtime.toString(16)}-${fileSize.toString(16)}"`);
 
     // sharpを使ってメタデータを除去する
     const image = sharp(filePath);
-    return new Response(await image.toBuffer());
+    return stream(c, async (stream) => {
+      await stream.write(await image.toBuffer());
+    });
   } catch (err) {
     if (
       (err as any)?.code == "ENOENT" ||
@@ -81,7 +77,7 @@ app.get("/api/images", async (c) => {
     }
 
     const itemPath = join(fullPath, entry);
-    const itemInfo = await Bun.file(itemPath).stat();
+    const itemInfo = await stat(itemPath);
     const isDirectory = itemInfo.isDirectory();
 
     items.push({
