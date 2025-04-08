@@ -1,6 +1,6 @@
 {
   "tasks": {
-    "dev": "deno serve --watch --allow-net --allow-read=. src/server.ts",
+    "dev": "deno serve --watch --allow-net --allow-read=static,images src/server.ts",
     "test": "deno test"
   },
   "imports": {
