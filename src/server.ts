@@ -2,11 +2,8 @@ import Bun from "bun";
 import { Hono } from "hono";
 import { join, normalize } from "node:path";
 import { readdir } from "node:fs/promises";
-import index from "../static/index.html" with { type: "file" };
 
 const app = new Hono();
-
-const staticDir = import.meta.dirname ? `${import.meta.dirname}/../static` : "static";
 
 // アクセスログミドルウェア
 app.use("*", async (c, next) => {
@@ -104,8 +101,8 @@ app.get("/api/images", async (c) => {
 });
 
 // 静的ファイル配信
-app.use("/*", async (_c, _next) => {
-  return new Response(Bun.file(index));
+app.use("/*", async (c, _next) => {
+  return c.json({ error: "File not found" }, 404);
 });
 
 // fetch エクスポート
