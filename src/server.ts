@@ -1,5 +1,6 @@
 import Bun from "bun";
 import { Hono } from "hono";
+import { logger } from "hono/logger";
 import { join, normalize } from "node:path";
 import { readdir } from "node:fs/promises";
 import sharp from "sharp";
@@ -7,12 +8,7 @@ import sharp from "sharp";
 const app = new Hono();
 
 // アクセスログミドルウェア
-app.use("*", async (c, next) => {
-  const start = Date.now();
-  await next();
-  const ms = Date.now() - start;
-  console.log(`${c.req.method} ${c.req.path} - ${ms}ms`);
-});
+app.use(logger());
 
 // 画像ファイル配信 (エラーハンドリング強化版)
 app.get("/images/*", async (c) => {
