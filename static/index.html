@@ -65,9 +65,9 @@
 
     <!-- モーダル表示要素 -->
     <div id="image-modal"
-        style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; z-index:1000;">
+        style="display:none; position:fixed; top:0; left:0; width:100%; height:100vh; z-index:1000;">
         <!-- バックドロップ用の要素 -->
-        <div style="position:absolute; top:0; left:0; width:100%; height:100%; background-color:rgba(0,0,0,0.9);"></div>
+        <div style="position:fixed; top:0; left:0; width:100%; height:100vh; background-color:rgba(0,0,0,0.9); overflow:hidden;"></div>
         
         <!-- 閉じるボタン -->
         <button 
