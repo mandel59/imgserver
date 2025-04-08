@@ -2,6 +2,7 @@ declare var Hammer: any;
 type ImageItem = {
   name: string;
   isDirectory: boolean;
+  isImage: boolean;
   modified: number;
   size: number;
   path: string;
@@ -13,15 +14,15 @@ async function init() {
   let currentImages: ImageItem[] = [];
 
   const sortOption = document.getElementById(
-    "sort-option",
+    "sort-option"
   ) as HTMLSelectElement;
 
   // アイテム一覧を取得
   async function fetchItems(): Promise<ImageItem[]> {
     const response = await fetch(
-      `/api/images?sort=${sortOption.value}&path=${
-        encodeURIComponent(currentPath)
-      }`,
+      `/api/images?sort=${sortOption.value}&path=${encodeURIComponent(
+        currentPath
+      )}`
     );
     return await response.json();
   }
@@ -45,24 +46,24 @@ async function init() {
     modalImg.src = `/images/${currentImages[currentImageIndex]!.path}`;
     updateAppState(
       currentPath,
-      currentImages[currentImageIndex]!.path.split("/").pop()!,
+      currentImages[currentImageIndex]!.path.split("/").pop()!
     );
   });
   hammer.on("swiperight", () => {
     if (currentImages.length === 0 || currentImageIndex === -1) return;
-    currentImageIndex = (currentImageIndex - 1 + currentImages.length) %
-      currentImages.length;
+    currentImageIndex =
+      (currentImageIndex - 1 + currentImages.length) % currentImages.length;
     modalImg.src = `/images/${currentImages[currentImageIndex]!.path}`;
     updateAppState(
       currentPath,
-      currentImages[currentImageIndex]!.path.split("/").pop()!,
+      currentImages[currentImageIndex]!.path.split("/").pop()!
     );
   });
 
   // 状態更新関数
   async function updateAppState(
     newPath: string,
-    imageName: string | null = null,
+    imageName: string | null = null
   ) {
     console.log("Updating app state:", { newPath, imageName });
 
@@ -98,7 +99,7 @@ async function init() {
       // スクロール位置を復元
       const savedIndex = scrollPositions[currentPath] || 0;
       console.log(
-        `Restoring scroll position for "${currentPath}": index ${savedIndex}`,
+        `Restoring scroll position for "${currentPath}": index ${savedIndex}`
       );
       scrollToImageIndex(savedIndex);
     }
@@ -158,12 +159,14 @@ async function init() {
         }
         // 右/左矢印キーで画像切り替え
         currentImageIndex =
-          (currentImageIndex + (e.key === "ArrowRight" ? 1 : -1) +
-            currentImages.length) % currentImages.length;
+          (currentImageIndex +
+            (e.key === "ArrowRight" ? 1 : -1) +
+            currentImages.length) %
+          currentImages.length;
         modalImg.src = `/images/${currentImages[currentImageIndex]!.path}`;
         updateAppState(
           currentPath,
-          currentImages[currentImageIndex]!.path.split("/").pop(),
+          currentImages[currentImageIndex]!.path.split("/").pop()
         );
       }
     }
@@ -175,7 +178,7 @@ async function init() {
   // 表示されている一番上の画像インデックスを取得 (スクロール範囲に表示されているもの)
   function getTopVisibleImageIndex(): number {
     const container = document.getElementById(
-      "image-container",
+      "image-container"
     ) as HTMLDivElement;
     const items = container.children;
     const containerTop = container.getBoundingClientRect().top;
@@ -190,14 +193,17 @@ async function init() {
       const itemRect = item.getBoundingClientRect();
 
       // アイテムの上端と下端が表示範囲内にあるかチェック
-      const isTopVisible = itemRect.top >= visibleTopThreshold &&
+      const isTopVisible =
+        itemRect.top >= visibleTopThreshold &&
         itemRect.top <= visibleBottomThreshold;
-      const isBottomVisible = itemRect.bottom >= visibleTopThreshold &&
+      const isBottomVisible =
+        itemRect.bottom >= visibleTopThreshold &&
         itemRect.bottom <= visibleBottomThreshold;
 
       // アイテムの一部でも表示範囲内にあればそのインデックスを返す
       if (
-        isTopVisible || isBottomVisible ||
+        isTopVisible ||
+        isBottomVisible ||
         (itemRect.top <= visibleTopThreshold &&
           itemRect.bottom >= visibleBottomThreshold)
       ) {
@@ -224,7 +230,7 @@ async function init() {
   // 画像インデックスからスクロール位置を計算
   function scrollToImageIndex(index: number) {
     const container = document.getElementById(
-      "image-container",
+      "image-container"
     ) as HTMLDivElement;
     if (index <= 0 || !container.children[index]) {
       window.scrollTo(0, 0);
@@ -289,8 +295,8 @@ async function init() {
       const fullPath = currentPath ? `${currentPath}/${imageName}` : imageName;
       console.log("Searching for image:", fullPath);
 
-      const index = items.findIndex((i) =>
-        !i.isDirectory && i.path === fullPath
+      const index = items.findIndex(
+        (i) => !i.isDirectory && i.path === fullPath
       );
       if (index !== -1) {
         console.log("Found image at index:", index);
@@ -305,7 +311,7 @@ async function init() {
     // スクロール位置を復元
     const savedIndex = scrollPositions[currentPath] || 0;
     console.log(
-      `Restoring scroll position for "${currentPath}": index ${savedIndex}`,
+      `Restoring scroll position for "${currentPath}": index ${savedIndex}`
     );
     scrollToImageIndex(savedIndex);
   }
@@ -313,13 +319,13 @@ async function init() {
   // アイテム一覧を表示 (async版)
   async function renderItemList(items: ImageItem[]) {
     const container = document.getElementById(
-      "image-container",
+      "image-container"
     ) as HTMLDivElement;
     container.innerHTML = "";
 
     // パンくずリストを表示
     const breadcrumbsContainer = document.getElementById(
-      "breadcrumbs-container",
+      "breadcrumbs-container"
     ) as HTMLDivElement;
     breadcrumbsContainer.innerHTML = "";
 
@@ -385,7 +391,7 @@ async function init() {
     breadcrumbsContainer.appendChild(breadcrumbs);
 
     // アイテムを表示
-    currentImages = items.filter((item) => !item.isDirectory);
+    currentImages = items.filter((item) => item.isImage);
 
     items.forEach((item) => {
       const itemElement = document.createElement("div");
@@ -436,7 +442,7 @@ async function init() {
         folderWrapper.appendChild(folderIcon);
         folderWrapper.appendChild(folderName);
         itemElement.appendChild(folderWrapper);
-      } else {
+      } else if (item.isImage) {
         // 画像表示
         // 画像をラップするdivを作成
         const imgWrapper = document.createElement("div");

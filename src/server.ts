@@ -2,9 +2,20 @@ import { Hono } from "hono";
 import { logger } from "hono/logger";
 import { etag } from "hono/etag";
 import { stream } from "hono/streaming";
-import { join, normalize } from "node:path/posix";
+import { join, normalize, extname } from "node:path/posix";
 import { readdir, stat } from "node:fs/promises";
 import sharp from "sharp";
+
+const imageExtensions = [
+  ".jpg",
+  ".jpeg",
+  ".png",
+  ".webp",
+  ".gif",
+  ".avif",
+  ".tif",
+  ".tiff",
+];
 
 const app = new Hono();
 
@@ -66,26 +77,41 @@ app.get("/images/*", etag(), async (c) => {
 // APIルート
 app.get("/api/images", async (c) => {
   const { sort = "name", path = "" } = c.req.query();
-  const fullPath = join("images", path);
+
+  const dirPath = join("images", path);
+
+  // セキュリティチェックと隠しファイルチェック
+  if (
+    dirPath.includes("\\") ||
+    dirPath.includes("/..") ||
+    dirPath.split("/").some((part: string) => part.startsWith("."))
+  ) {
+    console.error(`Invalid path attempt: ${dirPath}`);
+    return c.json({ error: "File not found" }, 404);
+  }
+
   const items: any[] = [];
 
   // ディレクトリとファイル情報を収集 (隠しファイルは除外)
-  for (const entry of await readdir(fullPath)) {
+  for (const fileName of await readdir(dirPath)) {
     // 隠しファイル(.で始まる)はスキップ
-    if (entry.startsWith(".")) {
+    if (fileName.startsWith(".")) {
       continue;
     }
 
-    const itemPath = join(fullPath, entry);
-    const itemInfo = await stat(itemPath);
-    const isDirectory = itemInfo.isDirectory();
+    const ext = extname(fileName).toLowerCase();
 
+    const filePath = join(dirPath, fileName);
+    const fileInfo = await stat(filePath);
+    const isDirectory = fileInfo.isDirectory();
+    const isImage = imageExtensions.includes(ext);
     items.push({
-      name: entry,
-      isDirectory: isDirectory,
-      modified: itemInfo.mtime?.getTime() || 0,
-      size: itemInfo.size,
-      path: normalize(join(path, entry)),
+      name: fileName,
+      isDirectory,
+      isImage,
+      modified: fileInfo.mtime.getTime(),
+      size: fileInfo.size,
+      path: join(path, fileName),
     });
   }
 
