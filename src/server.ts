@@ -1,7 +1,7 @@
 import Bun from "bun";
 import { Hono } from "hono";
 import { logger } from "hono/logger";
-import { join, normalize } from "node:path";
+import { join, normalize } from "node:path/posix";
 import { readdir } from "node:fs/promises";
 import sharp from "sharp";
 
@@ -12,19 +12,19 @@ app.use(logger());
 
 // 画像ファイル配信 (エラーハンドリング強化版)
 app.get("/images/*", async (c) => {
-  const relativePath = c.req.path.replace("/images/", "");
+  const relativePath = c.req.path.replace(/^\/images\//, "");
+
+  const filePath = join("images", relativePath);
 
   // セキュリティチェックと隠しファイルチェック
   if (
-    relativePath.includes("../") ||
-    relativePath.includes("..\\") ||
-    relativePath.split("/").some((part: string) => part.startsWith("."))
+    filePath.includes("\\") ||
+    filePath.includes("/..") ||
+    filePath.split("/").some((part: string) => part.startsWith("."))
   ) {
-    console.error(`Invalid path attempt: ${relativePath}`);
+    console.error(`Invalid path attempt: ${filePath}`);
     return c.json({ error: "File not found" }, 404);
   }
-
-  const filePath = join("images", relativePath);
 
   try {
     const file = Bun.file(filePath);
@@ -51,7 +51,10 @@ app.get("/images/*", async (c) => {
     const image = sharp(filePath);
     return new Response(await image.toBuffer());
   } catch (err) {
-    if ((err as any)?.code == "ENOENT") {
+    if (
+      (err as any)?.code == "ENOENT" ||
+      (err as any)?.message?.startsWith("Input file is missing")
+    ) {
       console.error(`File not found: ${filePath}`);
       return c.json({ error: "File not found" }, 404);
     }
@@ -86,7 +89,7 @@ app.get("/api/images", async (c) => {
       isDirectory: isDirectory,
       modified: itemInfo.mtime?.getTime() || 0,
       size: itemInfo.size,
-      path: normalize(join(path, entry)).replace(/\\/g, "/"),
+      path: normalize(join(path, entry)),
     });
   }
 
