@@ -3,6 +3,8 @@ import { join, normalize } from "@std/path";
 
 const app = new Hono();
 
+const staticDir = import.meta.dirname ? `${import.meta.dirname}/../static` : "static";
+
 // アクセスログミドルウェア
 app.use("*", async (c, next) => {
   const start = Date.now();
@@ -19,7 +21,7 @@ app.use("/*", async (c, next) => {
   }
   
   try {
-    const file = await Deno.readFile(`./static${filePath}`);
+    const file = await Deno.readFile(join(staticDir, filePath));
     return new Response(file);
   } catch {
     return next();
