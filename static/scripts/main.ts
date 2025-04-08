@@ -1,12 +1,5 @@
-declare var Hammer: any;
-type ImageItem = {
-  name: string;
-  isDirectory: boolean;
-  isImage: boolean;
-  modified: number;
-  size: number;
-  path: string;
-};
+import type { ImageItem } from './types';
+import { fetchItems } from './api';
 
 async function init() {
   let currentPath = "";
@@ -17,19 +10,9 @@ async function init() {
     "sort-option"
   ) as HTMLSelectElement;
 
-  // アイテム一覧を取得
-  async function fetchItems(): Promise<ImageItem[]> {
-    const response = await fetch(
-      `/api/images?sort=${sortOption.value}&path=${encodeURIComponent(
-        currentPath
-      )}`
-    );
-    return await response.json();
-  }
-
   // ソートオプション変更時の処理
   sortOption.addEventListener("change", async () => {
-    const items = await fetchItems();
+    const items = await fetchItems(sortOption.value, currentPath);
     renderItemList(items);
   });
 
@@ -92,7 +75,7 @@ async function init() {
     }
 
     if (pathChanged) {
-      const items = await fetchItems();
+      const items = await fetchItems(sortOption.value, currentPath);
       console.log("Fetched items:", items);
       await renderItemList(items);
 
@@ -287,7 +270,7 @@ async function init() {
     }
 
     // アイテムを取得
-    const items = await fetchItems();
+    const items = await fetchItems(sortOption.value, currentPath);
     console.log("Fetched items:", items);
 
     // currentImageIndexが無効値の場合のみインデックス検索
