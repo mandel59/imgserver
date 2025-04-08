@@ -501,6 +501,39 @@ async function init() {
 
         itemElement.appendChild(imgWrapper);
         itemElement.appendChild(fileNameDiv);
+      } else {
+        // 通常ファイル表示
+        const fileWrapper = document.createElement("div");
+        fileWrapper.tabIndex = 0;
+        fileWrapper.style.width = "180px";
+        fileWrapper.style.height = "180px";
+        fileWrapper.style.display = "flex";
+        fileWrapper.style.flexDirection = "column";
+        fileWrapper.style.alignItems = "center";
+        fileWrapper.style.justifyContent = "center";
+        fileWrapper.style.margin = "0 auto";
+
+        const fileIcon = document.createElement("div");
+        fileIcon.style.fontSize = "60px";
+        fileIcon.textContent = "📄";
+
+        const fileNameDiv = document.createElement("div");
+        fileNameDiv.textContent = item.name;
+        fileNameDiv.style.width = "180px";
+        fileNameDiv.style.height = "42px";
+        fileNameDiv.style.wordWrap = "break-word";
+        fileNameDiv.style.textAlign = "center";
+        fileNameDiv.style.padding = "5px";
+        fileNameDiv.style.boxSizing = "border-box";
+        fileNameDiv.style.overflow = "hidden";
+        fileNameDiv.style.textOverflow = "ellipsis";
+        fileNameDiv.style.display = "-webkit-box";
+        fileNameDiv.style.webkitLineClamp = "2";
+        fileNameDiv.style.webkitBoxOrient = "vertical";
+
+        fileWrapper.appendChild(fileIcon);
+        itemElement.appendChild(fileWrapper);
+        itemElement.appendChild(fileNameDiv);
       }
 
       container.appendChild(itemElement);
