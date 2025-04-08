@@ -15,7 +15,7 @@ A web-based image viewer application with:
 - Path-based navigation
 
 ## Tech Stack
-- **Backend**: Bun + TypeScript
+- **Backend**: Bun + TypeScript + Hono (web framework)
 - **Frontend**: Vanilla JS
 - **Dependencies**:
   - Hammer.js (for touch gestures)
