@@ -5,9 +5,12 @@ import { renderItemList } from '../render/itemList';
 export async function updateAppState(
   newPath: string,
   imageName: string | null = null,
-  state: AppState,
-  deps: AppDependencies
+  state?: AppState,
+  deps?: AppDependencies
 ) {
+  if (!state || !deps) {
+    throw new Error('State and dependencies must be provided');
+  }
   const { currentPath, currentImages, scrollPositions } = state;
   const { sortOption, showModal, modalImg } = deps;
   console.log("Updating app state:", { newPath, imageName });

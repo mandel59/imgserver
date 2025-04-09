@@ -42,7 +42,7 @@ export function setupKeyboardHandlers(
         deps.modalImg.src = `/images/${currentImage.path}`;
         updateAppState(
           state.currentPath,
-          currentImage.path.split("/").pop(),
+          currentImage.path.split("/").pop() ?? null,
           state,
           deps
         );
