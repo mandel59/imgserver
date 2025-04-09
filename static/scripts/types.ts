@@ -19,5 +19,6 @@ export interface AppState {
 export interface AppDependencies {
   sortOption: HTMLSelectElement;
   showModal: () => void;
+  hideModal: () => void;
   modalImg: HTMLImageElement;
 }

@@ -2,6 +2,8 @@ import type { ImageItem, AppState, AppDependencies } from './types';
 import { fetchItems } from './api';
 import { renderItemList } from './render/itemList';
 import { setupModal } from './render/modal';
+import { setupKeyboardHandlers } from './events/keyboard';
+import { setupHammerHandlers } from './events/hammer';
 
 async function init() {
   // モーダル初期化
@@ -21,6 +23,7 @@ async function init() {
   const deps = {
     sortOption,
     showModal,
+    hideModal,
     modalImg
   };
 
@@ -36,46 +39,7 @@ async function init() {
   });
 
   // スワイプ操作の設定
-  const hammer = new Hammer(modal);
-  hammer.on("swipeleft", () => {
-    if (state.currentImages.length === 0 || state.currentImageIndex === -1) {
-      console.warn('No images available to swipe');
-      return;
-    }
-    state.currentImageIndex = (state.currentImageIndex + 1) % state.currentImages.length;
-    const currentImage = state.currentImages[state.currentImageIndex];
-    if (!currentImage?.path) {
-      console.error('Invalid image data:', currentImage);
-      return;
-    }
-    modalImg.src = `/images/${currentImage.path}`;
-    updateAppState(
-      state.currentPath,
-      currentImage.path.split("/").pop()!,
-      state,
-      deps
-    );
-  });
-  hammer.on("swiperight", () => {
-    if (state.currentImages.length === 0 || state.currentImageIndex === -1) {
-      console.warn('No images available to swipe');
-      return;
-    }
-    state.currentImageIndex =
-      (state.currentImageIndex - 1 + state.currentImages.length) % state.currentImages.length;
-    const currentImage = state.currentImages[state.currentImageIndex];
-    if (!currentImage?.path) {
-      console.error('Invalid image data:', currentImage);
-      return;
-    }
-    modalImg.src = `/images/${currentImage.path}`;
-    updateAppState(
-      state.currentPath,
-      currentImage.path.split("/").pop()!,
-      state,
-      deps
-    );
-  });
+  const hammer = setupHammerHandlers(modal, state, deps, updateAppState);
 
   // 状態更新関数
   async function updateAppState(
@@ -152,45 +116,8 @@ async function init() {
     history.pushState({}, "", `?${urlParams.toString()}`);
   });
 
-  // キーボード操作
-  document.addEventListener("keydown", (e) => {
-    if (modal.style.display === "flex") {
-      if (e.key === "Escape") {
-        modal.style.display = "none";
-        hideModal();
-        // URLを更新 (画像パラメータを削除)
-        const urlParams = new URLSearchParams(window.location.search);
-        urlParams.delete("image");
-        history.pushState({}, "", `?${urlParams.toString()}`);
-      } else if (
-        (e.key === "ArrowRight" || e.key === "ArrowLeft") &&
-        state.currentImageIndex !== -1
-      ) {
-        // モディファイアキーが押されている場合は無視
-        if (e.shiftKey || e.ctrlKey || e.altKey || e.metaKey) {
-          return;
-        }
-        // 右/左矢印キーで画像切り替え
-        state.currentImageIndex =
-          (state.currentImageIndex +
-            (e.key === "ArrowRight" ? 1 : -1) +
-            state.currentImages.length) %
-          state.currentImages.length;
-        const currentImage = state.currentImages[state.currentImageIndex];
-        if (!currentImage?.path) {
-          console.error('Invalid image data:', currentImage);
-          return;
-        }
-        modalImg.src = `/images/${currentImage.path}`;
-        updateAppState(
-          state.currentPath,
-          currentImage.path.split("/").pop(),
-          state,
-          deps
-        );
-      }
-    }
-  });
+  // キーボード操作の設定
+  setupKeyboardHandlers(modal, state, deps, updateAppState);
 
   // スクロール位置を保存 (画像インデックス方式)
   const scrollPositions: Record<string, number> = Object.create(null);
