@@ -5,30 +5,52 @@ import { setupModal } from './render/modal';
 import { setupKeyboardHandlers } from './events/keyboard';
 import { setupHammerHandlers } from './events/hammer';
 
-async function init() {
-  // モーダル初期化
-  const { showModal, hideModal, modalImg, modal, closeBtn, backdrop } = setupModal();
-
-  const state = {
+function initAppState(): AppState {
+  return {
     currentPath: "",
     currentImageIndex: 0,
     currentImages: [] as ImageItem[],
     scrollPositions: Object.create(null) as Record<string, number>
   };
+}
 
-  const sortOption = document.getElementById(
-    "sort-option"
-  ) as HTMLSelectElement;
-
-  const deps = {
-    sortOption,
+function initUIComponents() {
+  const { showModal, hideModal, modalImg, modal, closeBtn, backdrop } = setupModal();
+  const sortOption = document.getElementById("sort-option") as HTMLSelectElement;
+  
+  return { 
+    modal,
+    modalImg,
     showModal,
     hideModal,
+    closeBtn,
+    backdrop,
+    sortOption
+  };
+}
+
+function initDependencies(state: AppState, modalImg: HTMLImageElement, uiComponents: ReturnType<typeof initUIComponents>): AppDependencies {
+  return {
+    sortOption: uiComponents.sortOption,
+    showModal: uiComponents.showModal,
+    hideModal: uiComponents.hideModal,
     modalImg
   };
+}
+
+async function initApp() {
+  // 状態管理初期化
+  const state = initAppState();
+  
+  // UIコンポーネント初期化
+  const uiComponents = initUIComponents();
+  const { modal, modalImg } = uiComponents;
+  
+  // 依存関係設定
+  const deps = initDependencies(state, modalImg, uiComponents);
 
   // ソートオプション変更時の処理
-  sortOption.addEventListener("change", async () => {
+  uiComponents.sortOption.addEventListener("change", async () => {
     const items = await fetchItems(deps.sortOption.value, state.currentPath);
     await renderItemList({
       items,
@@ -97,9 +119,9 @@ async function init() {
   }
 
   // モーダルを閉じる
-  closeBtn.addEventListener("click", () => {
+  uiComponents.closeBtn.addEventListener("click", () => {
     modal.style.display = "none";
-    hideModal();
+    uiComponents.hideModal();
     // URLを更新 (画像パラメータを削除)
     const urlParams = new URLSearchParams(window.location.search);
     urlParams.delete("image");
@@ -107,9 +129,9 @@ async function init() {
   });
 
   // バックドロップクリックでモーダルを閉じる
-  backdrop.addEventListener("click", () => {
+  uiComponents.backdrop.addEventListener("click", () => {
     modal.style.display = "none";
-    hideModal();
+    uiComponents.hideModal();
     // URLを更新 (画像パラメータを削除)
     const urlParams = new URLSearchParams(window.location.search);
     urlParams.delete("image");
@@ -230,7 +252,7 @@ async function init() {
       console.log("Loading image first:", fullPath);
       state.currentImageIndex = -1; // 無効値に設定
       modalImg.src = `/images/${fullPath}`;
-      showModal();
+      uiComponents.showModal();
     }
 
     // アイテムを取得
@@ -280,4 +302,4 @@ async function init() {
 }
 
 // ページ読み込み時に状態復元
-window.addEventListener("DOMContentLoaded", init);
+window.addEventListener("DOMContentLoaded", initApp);
