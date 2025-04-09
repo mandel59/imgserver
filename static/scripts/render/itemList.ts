@@ -1,22 +1,25 @@
-import type { ImageItem } from '../types';
+import type { AppState, AppDependencies, ImageItem } from '../types';
 
 interface RenderItemListParams {
   items: ImageItem[];
-  currentPath: string;
-  currentImages: ImageItem[];
-  updateAppState: (newPath: string, imageName?: string | null) => Promise<void>;
-  showModal: () => void;
-  modalImg: HTMLImageElement;
+  state: AppState;
+  deps: AppDependencies;
+  updateAppState: (
+    newPath: string, 
+    imageName?: string | null,
+    state?: AppState,
+    deps?: AppDependencies
+  ) => Promise<void>;
 }
 
 export async function renderItemList({
   items,
-  currentPath,
-  currentImages,
-  updateAppState,
-  showModal,
-  modalImg
+  state,
+  deps,
+  updateAppState
 }: RenderItemListParams) {
+  const { currentPath, currentImages } = state;
+  const { showModal, modalImg } = deps;
   const container = document.getElementById(
     "image-container"
   ) as HTMLDivElement;
@@ -90,7 +93,7 @@ export async function renderItemList({
   breadcrumbsContainer.appendChild(breadcrumbs);
 
   // アイテムを表示
-  currentImages = items.filter((item) => item.isImage);
+  state.currentImages = items.filter((item) => item.isImage);
 
   items.forEach((item) => {
     const itemElement = document.createElement("div");

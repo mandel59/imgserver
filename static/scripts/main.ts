@@ -1,4 +1,4 @@
-import type { ImageItem } from './types';
+import type { ImageItem, AppState, AppDependencies } from './types';
 import { fetchItems } from './api';
 import { renderItemList } from './render/itemList';
 import { setupModal } from './render/modal';
@@ -7,77 +7,93 @@ async function init() {
   // モーダル初期化
   const { showModal, hideModal, modalImg, modal, closeBtn, backdrop } = setupModal();
 
-  let currentPath = "";
-  let currentImageIndex = 0;
-  let currentImages: ImageItem[] = [];
+  const state = {
+    currentPath: "",
+    currentImageIndex: 0,
+    currentImages: [] as ImageItem[],
+    scrollPositions: Object.create(null) as Record<string, number>
+  };
 
   const sortOption = document.getElementById(
     "sort-option"
   ) as HTMLSelectElement;
 
+  const deps = {
+    sortOption,
+    showModal,
+    modalImg
+  };
+
   // ソートオプション変更時の処理
   sortOption.addEventListener("change", async () => {
-    const items = await fetchItems(sortOption.value, currentPath);
+    const items = await fetchItems(deps.sortOption.value, state.currentPath);
     await renderItemList({
       items,
-      currentPath,
-      currentImages,
-      updateAppState,
-      showModal,
-      modalImg
+      state,
+      deps,
+      updateAppState
     });
   });
 
   // スワイプ操作の設定
   const hammer = new Hammer(modal);
   hammer.on("swipeleft", () => {
-    if (currentImages.length === 0 || currentImageIndex === -1) {
+    if (state.currentImages.length === 0 || state.currentImageIndex === -1) {
       console.warn('No images available to swipe');
       return;
     }
-    currentImageIndex = (currentImageIndex + 1) % currentImages.length;
-    const currentImage = currentImages[currentImageIndex];
+    state.currentImageIndex = (state.currentImageIndex + 1) % state.currentImages.length;
+    const currentImage = state.currentImages[state.currentImageIndex];
     if (!currentImage?.path) {
       console.error('Invalid image data:', currentImage);
       return;
     }
     modalImg.src = `/images/${currentImage.path}`;
     updateAppState(
-      currentPath,
-      currentImage.path.split("/").pop()!
+      state.currentPath,
+      currentImage.path.split("/").pop()!,
+      state,
+      deps
     );
   });
   hammer.on("swiperight", () => {
-    if (currentImages.length === 0 || currentImageIndex === -1) {
+    if (state.currentImages.length === 0 || state.currentImageIndex === -1) {
       console.warn('No images available to swipe');
       return;
     }
-    currentImageIndex =
-      (currentImageIndex - 1 + currentImages.length) % currentImages.length;
-    const currentImage = currentImages[currentImageIndex];
+    state.currentImageIndex =
+      (state.currentImageIndex - 1 + state.currentImages.length) % state.currentImages.length;
+    const currentImage = state.currentImages[state.currentImageIndex];
     if (!currentImage?.path) {
       console.error('Invalid image data:', currentImage);
       return;
     }
     modalImg.src = `/images/${currentImage.path}`;
     updateAppState(
-      currentPath,
-      currentImage.path.split("/").pop()!
+      state.currentPath,
+      currentImage.path.split("/").pop()!,
+      state,
+      deps
     );
   });
 
   // 状態更新関数
   async function updateAppState(
     newPath: string,
-    imageName: string | null = null
+    imageName: string | null = null,
+    newState?: AppState,
+    newDeps?: AppDependencies
   ) {
+    const currentState = newState || state;
+    const currentDeps = newDeps || deps;
+    
     console.log("Updating app state:", { newPath, imageName });
 
     // 現在表示されている画像インデックスを保存 (遷移前)
-    if (currentPath !== null && currentPath !== undefined) {
+    if (currentState.currentPath !== null && currentState.currentPath !== undefined) {
       const topIndex = getTopVisibleImageIndex();
-      scrollPositions[currentPath] = topIndex;
-      console.log(`Saved top image index for "${currentPath}": ${topIndex}`);
+      currentState.scrollPositions[currentState.currentPath] = topIndex;
+      console.log(`Saved top image index for "${currentState.currentPath}": ${topIndex}`);
     }
 
     const urlParams = new URLSearchParams();
@@ -87,32 +103,30 @@ async function init() {
     console.log("New URL params:", urlParams.toString());
     history.pushState({}, "", `?${urlParams.toString()}`);
 
-    const pathChanged = currentPath !== newPath;
-    currentPath = newPath;
-    console.log("Current path updated to:", currentPath);
+    const pathChanged = currentState.currentPath !== newPath;
+    currentState.currentPath = newPath;
+    console.log("Current path updated to:", currentState.currentPath);
 
     // 新しいパスのスクロール位置を初期化
-    if (!scrollPositions[currentPath]) {
-      scrollPositions[currentPath] = 0;
-      console.log(`Initialized scroll position for "${currentPath}" to 0`);
+    if (!currentState.scrollPositions[currentState.currentPath]) {
+      currentState.scrollPositions[currentState.currentPath] = 0;
+      console.log(`Initialized scroll position for "${currentState.currentPath}" to 0`);
     }
 
     if (pathChanged) {
-      const items = await fetchItems(sortOption.value, currentPath);
+      const items = await fetchItems(currentDeps.sortOption.value, currentState.currentPath);
       console.log("Fetched items:", items);
       await renderItemList({
         items,
-        currentPath,
-        currentImages,
-        updateAppState,
-        showModal,
-        modalImg
+        state: currentState,
+        deps: currentDeps,
+        updateAppState
       });
 
       // スクロール位置を復元
-      const savedIndex = scrollPositions[currentPath] || 0;
+      const savedIndex = currentState.scrollPositions[currentState.currentPath] || 0;
       console.log(
-        `Restoring scroll position for "${currentPath}": index ${savedIndex}`
+        `Restoring scroll position for "${currentState.currentPath}": index ${savedIndex}`
       );
       scrollToImageIndex(savedIndex);
     }
@@ -150,27 +164,29 @@ async function init() {
         history.pushState({}, "", `?${urlParams.toString()}`);
       } else if (
         (e.key === "ArrowRight" || e.key === "ArrowLeft") &&
-        currentImageIndex !== -1
+        state.currentImageIndex !== -1
       ) {
         // モディファイアキーが押されている場合は無視
         if (e.shiftKey || e.ctrlKey || e.altKey || e.metaKey) {
           return;
         }
         // 右/左矢印キーで画像切り替え
-        currentImageIndex =
-          (currentImageIndex +
+        state.currentImageIndex =
+          (state.currentImageIndex +
             (e.key === "ArrowRight" ? 1 : -1) +
-            currentImages.length) %
-          currentImages.length;
-        const currentImage = currentImages[currentImageIndex];
+            state.currentImages.length) %
+          state.currentImages.length;
+        const currentImage = state.currentImages[state.currentImageIndex];
         if (!currentImage?.path) {
           console.error('Invalid image data:', currentImage);
           return;
         }
         modalImg.src = `/images/${currentImage.path}`;
         updateAppState(
-          currentPath,
-          currentImage.path.split("/").pop()
+          state.currentPath,
+          currentImage.path.split("/").pop(),
+          state,
+          deps
         );
       }
     }
@@ -265,38 +281,38 @@ async function init() {
     console.log("Current URL params:", { imageName, pathParam });
 
     // 現在表示されている一番上の画像インデックスを保存
-    if (currentPath !== null && currentPath !== undefined) {
+    if (state.currentPath !== null && state.currentPath !== undefined) {
       const topIndex = getTopVisibleImageIndex();
-      scrollPositions[currentPath] = topIndex;
-      console.log(`Saved top image index for "${currentPath}": ${topIndex}`);
+      state.scrollPositions[state.currentPath] = topIndex;
+      console.log(`Saved top image index for "${state.currentPath}": ${topIndex}`);
     }
 
     // パスを更新
-    currentPath = pathParam ? decodeURIComponent(pathParam) : "";
-    console.log("Restoring path:", currentPath);
+    state.currentPath = pathParam ? decodeURIComponent(pathParam) : "";
+    console.log("Restoring path:", state.currentPath);
 
     // 新しいフォルダに遷移した場合はスクロール位置を初期化
-    if (!scrollPositions[currentPath]) {
-      scrollPositions[currentPath] = 0;
-      console.log(`Initialized scroll position for "${currentPath}" to 0`);
+    if (!state.scrollPositions[state.currentPath]) {
+      state.scrollPositions[state.currentPath] = 0;
+      console.log(`Initialized scroll position for "${state.currentPath}" to 0`);
     }
 
     // 画像表示処理 (先に実行)
     if (imageName) {
-      const fullPath = currentPath ? `${currentPath}/${imageName}` : imageName;
+      const fullPath = state.currentPath ? `${state.currentPath}/${imageName}` : imageName;
       console.log("Loading image first:", fullPath);
-      currentImageIndex = -1; // 無効値に設定
+      state.currentImageIndex = -1; // 無効値に設定
       modalImg.src = `/images/${fullPath}`;
       showModal();
     }
 
     // アイテムを取得
-    const items = await fetchItems(sortOption.value, currentPath);
+    const items = await fetchItems(deps.sortOption.value, state.currentPath);
     console.log("Fetched items:", items);
 
     // currentImageIndexが無効値の場合のみインデックス検索
-    if (imageName && currentImageIndex === -1) {
-      const fullPath = currentPath ? `${currentPath}/${imageName}` : imageName;
+    if (imageName && state.currentImageIndex === -1) {
+      const fullPath = state.currentPath ? `${state.currentPath}/${imageName}` : imageName;
       console.log("Searching for image:", fullPath);
 
       const index = items.findIndex(
@@ -304,7 +320,7 @@ async function init() {
       );
       if (index !== -1) {
         console.log("Found image at index:", index);
-        currentImageIndex = index;
+        state.currentImageIndex = index;
       } else {
         console.log("Image not found");
       }
@@ -312,17 +328,15 @@ async function init() {
 
     await renderItemList({
       items,
-      currentPath,
-      currentImages,
-      updateAppState,
-      showModal,
-      modalImg
+      state,
+      deps,
+      updateAppState
     });
 
     // スクロール位置を復元
-    const savedIndex = scrollPositions[currentPath] || 0;
+    const savedIndex = state.scrollPositions[state.currentPath] || 0;
     console.log(
-      `Restoring scroll position for "${currentPath}": index ${savedIndex}`
+      `Restoring scroll position for "${state.currentPath}": index ${savedIndex}`
     );
     scrollToImageIndex(savedIndex);
   }

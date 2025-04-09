@@ -1,8 +1,23 @@
-export type ImageItem = {
+export interface ImageItem {
   name: string;
+  path: string;
+  url: string;
+  size: number;
+  lastModified: string;
   isDirectory: boolean;
   isImage: boolean;
-  modified: number;
-  size: number;
-  path: string;
-};
+  thumbnailUrl?: string;
+}
+
+export interface AppState {
+  currentPath: string;
+  currentImages: ImageItem[];
+  currentImageIndex: number;
+  scrollPositions: Record<string, number>;
+}
+
+export interface AppDependencies {
+  sortOption: HTMLSelectElement;
+  showModal: () => void;
+  modalImg: HTMLImageElement;
+}
