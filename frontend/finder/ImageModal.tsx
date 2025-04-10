@@ -2,11 +2,12 @@ import { useAtom } from "jotai";
 import { useEffect, useCallback } from "react";
 import Hammer from "hammerjs";
 
-import { 
-  isImageModalOpenAtom, 
-  selectedImageAtom,
+import {
+  isImageModalOpenAtom,
   selectedImageIndexAtom,
-  currentImagesAtom
+  currentImagesAtom,
+  onShowNextImageAtom,
+  selectedImagePathAtom,
 } from "./states.ts";
 
 export function BackDrop({ closeModal }: { closeModal: () => void }) {
@@ -51,13 +52,13 @@ export function CloseButton({ closeModal }: { closeModal: () => void }) {
 }
 
 export function ImageContainer() {
-  const [selectedImage] = useAtom(selectedImageAtom);
+  const [selectedImagePath] = useAtom(selectedImagePathAtom);
 
-  if (!selectedImage) {
+  if (!selectedImagePath) {
     return null;
   }
 
-  const src = `images/${selectedImage.path}`;
+  const src = `images/${selectedImagePath}`;
 
   return (
     <div
@@ -88,9 +89,10 @@ export function ImageContainer() {
   );
 }
 
-export default function ImageModal(props: {}) {
+export default function ImageModal() {
   const [isImageModalOpen, setIsModalOpen] = useAtom(isImageModalOpenAtom);
-  const [selectedImageIndex, setSelectedImageIndex] = useAtom(selectedImageIndexAtom);
+  const [selectedImageIndex] = useAtom(selectedImageIndexAtom);
+  const [, onShowNextImage] = useAtom(onShowNextImageAtom);
   const [currentImages] = useAtom(currentImagesAtom);
 
   const display = isImageModalOpen ? "flex" : "none";
@@ -118,35 +120,22 @@ export default function ImageModal(props: {}) {
     // ハンマーJSでスワイプ操作を設定
     const hammer = new Hammer(modal);
     hammer.on("swipeleft", () => {
-      if (currentImages.length === 0 || selectedImageIndex === -1) return;
-      const newIndex = (selectedImageIndex + 1) % currentImages.length;
-      setSelectedImageIndex(newIndex);
+      onShowNextImage(1);
     });
     hammer.on("swiperight", () => {
-      if (currentImages.length === 0 || selectedImageIndex === -1) return;
-      const newIndex = (selectedImageIndex - 1 + currentImages.length) % currentImages.length;
-      setSelectedImageIndex(newIndex);
+      onShowNextImage(-1);
     });
 
     // キーボード操作
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         closeModal();
-      } else if (
-        (e.key === "ArrowRight" || e.key === "ArrowLeft") &&
-        selectedImageIndex !== -1
-      ) {
+      } else if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
         // モディファイアキーが押されている場合は無視
         if (e.shiftKey || e.ctrlKey || e.altKey || e.metaKey) {
           return;
         }
-        // 右/左矢印キーで画像切り替え
-        const newIndex =
-          (selectedImageIndex +
-            (e.key === "ArrowRight" ? 1 : -1) +
-            currentImages.length) %
-          currentImages.length;
-        setSelectedImageIndex(newIndex);
+        onShowNextImage(e.key === "ArrowRight" ? 1 : -1);
       }
     };
 
@@ -155,7 +144,14 @@ export default function ImageModal(props: {}) {
       hammer.destroy();
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isImageModalOpen, selectedImageIndex, currentImages, setSelectedImageIndex, closeModal, showModal]);
+  }, [
+    isImageModalOpen,
+    selectedImageIndex,
+    currentImages,
+    onShowNextImage,
+    closeModal,
+    showModal,
+  ]);
 
   return (
     <div

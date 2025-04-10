@@ -3,9 +3,8 @@ import type { FileItem } from "./types.ts";
 import {
   currentFileItemsQueryAtom,
   onNavigateAtom,
-  isImageModalOpenAtom,
-  selectedImageIndexAtom,
   currentImagesAtom,
+  onImageModalOpenAtom,
 } from "./states.ts";
 
 export function IconWithName({ icon, file }: { icon: string; file: FileItem }) {
@@ -54,15 +53,13 @@ export function FolderIcon({ file }: { file: FileItem }) {
 }
 
 export function ImageIcon({ file }: { file: FileItem }) {
-  const [, setIsModalOpen] = useAtom(isImageModalOpenAtom);
-  const [, setCurrentImageIndex] = useAtom(selectedImageIndexAtom);
+  const [, onImageModalOpen] = useAtom(onImageModalOpenAtom);
   const [currentImages] = useAtom(currentImagesAtom);
 
   const openImage = () => {
     const index = currentImages.findIndex((img) => img.path === file.path);
     if (index !== -1) {
-      setCurrentImageIndex(index);
-      setIsModalOpen(true);
+      onImageModalOpen(file.name, index);
     }
   };
 
