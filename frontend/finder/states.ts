@@ -6,45 +6,55 @@ import { resolve } from "path-browserify";
 import type { FileItem, SortOption } from "./types.ts";
 import { fetchFileItems } from "./api.ts";
 
-const locationAtom = atomWithLocation();
-
-interface FinderSearchParam {
+interface LocationState {
   path: string;
   image: string;
 }
 
-export const finderSearchParamAtom = atom(
-  (get) =>
-    ({
-      path: get(locationAtom).searchParams?.get("path") ?? "",
-      image: get(locationAtom).searchParams?.get("image") ?? "",
-    } satisfies FinderSearchParam),
-  (_get, set, params: FinderSearchParam) => {
-    set(locationAtom, (prev) => ({
-      ...prev,
-      searchParams: new URLSearchParams(
-        [
-          ["path", params.path],
-          ["image", params.image],
-        ].filter(([_k, v]) => v)
-      ),
-    }));
+function locationStateEquivalent(a: LocationState, b: LocationState) {
+  return a.path === b.path;
+}
+
+function updateLocation(current: string, location: LocationState): URL {
+  const url = new URL(current);
+  url.search = "";
+  if (location.path) url.searchParams.set("path", location.path);
+  if (location.image) url.searchParams.set("image", location.image);
+  return url;
+}
+
+function getLocation(): LocationState {
+  const searchParams = new URL(window.location.href).searchParams;
+  return {
+    path: searchParams?.get("path") ?? "",
+    image: searchParams?.get("image") ?? "",
+  };
+}
+
+function applyLocation(location: LocationState) {
+  const currentLocation = getLocation();
+  const replace = locationStateEquivalent(currentLocation, location);
+  const url = updateLocation(window.location.href, location);
+  if (replace) {
+    window.history.replaceState(window.history.state, "", url);
+  } else {
+    window.history.pushState(null, "", url);
   }
-);
+}
+
+const locationAtom = atomWithLocation({ getLocation, applyLocation });
 
 export const currentPathAtom = atom(
-  (get) => get(finderSearchParamAtom).path,
+  (get) => get(locationAtom).path,
   (get, set, path: string) => {
-    set(finderSearchParamAtom, { ...get(finderSearchParamAtom), path });
+    set(locationAtom, { ...get(locationAtom), path });
   }
 );
 
 export const selectedImageNameAtom = atom(
-  (get) => {
-    return get(finderSearchParamAtom).image;
-  },
+  (get) => get(locationAtom).image,
   (get, set, image: string) => {
-    set(finderSearchParamAtom, { ...get(finderSearchParamAtom), image });
+    set(locationAtom, { ...get(locationAtom), image });
   }
 );
 
