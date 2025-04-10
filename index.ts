@@ -1,11 +1,11 @@
 import Bun from "bun";
 import app from "./backend/app";
-import viewer from "./frontend/index.html";
+import oldViewer from "./frontend/old_impl/index.html";
 
 Bun.serve({
   port: 8000,
   routes: {
-    "/": viewer,
+    "/": oldViewer,
   },
   fetch: app.fetch,
 });
