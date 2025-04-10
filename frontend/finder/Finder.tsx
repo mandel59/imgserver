@@ -1,30 +1,22 @@
+import { useAtom } from "jotai";
+
+import ImageModal from "./ImageModal.tsx";
 import Controls from "./Controls.tsx";
 import Breadcrumbs from "./Breadcrumbs.tsx";
 import FileContainer from "./FileContainer.tsx";
 import type { FileItem } from "./types.ts";
+import { currentPathAtom, onNavigateAtom } from "./states.ts";
 
-interface FinderProps {
-  currentPath: string;
-  onNavigate: (path: string) => void;
-}
+export default function Finder() {
+  const [currentPath] = useAtom(currentPathAtom);
 
-export default function Finder({ currentPath, onNavigate }: FinderProps) {
-  const files: FileItem[] = [
-    {
-      name: "file1",
-      isDirectory: false,
-      isImage: false,
-      modified: 0,
-      size: 0,
-      path: "file1",
-    },
-  ];
   return (
     <>
       <h1>Image Viewer</h1>
+      <ImageModal />
       <Controls />
-      <Breadcrumbs currentPath={currentPath} onNavigate={onNavigate} />
-      <FileContainer files={files} />
+      <Breadcrumbs currentPath={currentPath} />
+      <FileContainer />
     </>
   );
 }
