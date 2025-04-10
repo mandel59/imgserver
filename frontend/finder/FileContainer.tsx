@@ -1,7 +1,12 @@
 import { useAtom } from "jotai";
 import type { FileItem } from "./types.ts";
-import { currentFileItemsQueryAtom, onNavigateAtom } from "./states.ts";
-import { Suspense } from "react";
+import {
+  currentFileItemsQueryAtom,
+  onNavigateAtom,
+  isImageModalOpenAtom,
+  selectedImageIndexAtom,
+  currentImagesAtom,
+} from "./states.ts";
 
 export function IconWithName({ icon, file }: { icon: string; file: FileItem }) {
   return (
@@ -49,7 +54,77 @@ export function FolderIcon({ file }: { file: FileItem }) {
 }
 
 export function ImageIcon({ file }: { file: FileItem }) {
-  return <IconWithName icon="📄" file={file} />;
+  const [, setIsModalOpen] = useAtom(isImageModalOpenAtom);
+  const [, setCurrentImageIndex] = useAtom(selectedImageIndexAtom);
+  const [currentImages] = useAtom(currentImagesAtom);
+
+  const openImage = () => {
+    const index = currentImages.findIndex((img) => img.path === file.path);
+    if (index !== -1) {
+      setCurrentImageIndex(index);
+      setIsModalOpen(true);
+    }
+  };
+
+  return (
+    <div
+      style={{
+        width: "200px",
+        height: "222px",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        cursor: "pointer",
+        marginBottom: "10px",
+      }}
+    >
+      <div
+        tabIndex={0}
+        onClick={openImage}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            openImage();
+          }
+        }}
+        style={{
+          width: "180px",
+          height: "180px",
+          position: "relative",
+          margin: "0 auto",
+          overflow: "hidden",
+        }}
+      >
+        <img
+          loading="lazy"
+          src={`/images/${file.path}`}
+          style={{
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+          }}
+          alt={file.name}
+        />
+      </div>
+      <div
+        style={{
+          width: "180px",
+          height: "42px",
+          wordWrap: "break-word",
+          textAlign: "center",
+          padding: "5px",
+          boxSizing: "border-box",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          display: "-webkit-box",
+          WebkitLineClamp: "2",
+          WebkitBoxOrient: "vertical",
+        }}
+      >
+        {file.name}
+      </div>
+    </div>
+  );
 }
 
 export function RegularFileIcon({ file }: { file: FileItem }) {

@@ -1,4 +1,9 @@
-export function BackDrop() {
+import { useAtom } from "jotai";
+
+import { isImageModalOpenAtom, selectedImageAtom } from "./states.ts";
+import { useCallback } from "react";
+
+export function BackDrop({ closeModal }: { closeModal: () => void }) {
   return (
     <div
       style={{
@@ -10,11 +15,12 @@ export function BackDrop() {
         backgroundColor: "rgba(0, 0, 0, 0.9)",
         overflow: "hidden",
       }}
+      onClick={closeModal}
     />
   );
 }
 
-export function CloseButton() {
+export function CloseButton({ closeModal }: { closeModal: () => void }) {
   return (
     <button
       style={{
@@ -31,6 +37,7 @@ export function CloseButton() {
       }}
       aria-label="Close modal"
       tabIndex={0}
+      onClick={closeModal}
     >
       ×
     </button>
@@ -38,6 +45,14 @@ export function CloseButton() {
 }
 
 export function ImageContainer() {
+  const [selectedImage] = useAtom(selectedImageAtom);
+
+  if (!selectedImage) {
+    return null;
+  }
+
+  const src = `images/${selectedImage.path}`;
+
   return (
     <div
       style={{
@@ -61,17 +76,26 @@ export function ImageContainer() {
           padding: "20px",
           pointerEvents: "auto",
         }}
+        src={src}
       />
     </div>
   );
 }
 
 export default function ImageModal(props: {}) {
+  const [isImageModalOpen, setIsModalOpen] = useAtom(isImageModalOpenAtom);
+
+  const display = isImageModalOpen ? "flex" : "none";
+
+  const closeModal = useCallback(() => {
+    setIsModalOpen(false);
+  }, [setIsModalOpen]);
+
   return (
     <div
       id="image-modal"
       style={{
-        display: "none",
+        display,
         position: "fixed",
         top: 0,
         left: 0,
@@ -80,8 +104,8 @@ export default function ImageModal(props: {}) {
         zIndex: 1000,
       }}
     >
-      <BackDrop />
-      <CloseButton />
+      <BackDrop closeModal={closeModal} />
+      <CloseButton closeModal={closeModal} />
       <ImageContainer />
     </div>
   );

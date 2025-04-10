@@ -54,7 +54,11 @@ export const onNavigateAtom = atom(null, (_get, set, path: string) => {
   set(currentPathAtom, resolve("/", path).slice(1));
 });
 
-export const currentImageIndexAtom = atom(-1);
+export const isImageModalOpenAtom = atom(false);
+export const selectedImageIndexAtom = atom(-1);
+export const selectedImageAtom = atom(
+  (get) => get(currentImagesAtom)[get(selectedImageIndexAtom)]
+);
 export const currentImagesAtom = atom<FileItem[]>(
   (get) =>
     get(currentFileItemsQueryAtom).data?.files?.filter(
