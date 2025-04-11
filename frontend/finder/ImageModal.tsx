@@ -1,6 +1,7 @@
 import { useAtom } from "jotai";
-import { useEffect, useCallback } from "react";
+import React, { useEffect, useCallback, useRef } from "react";
 import Hammer from "hammerjs";
+import "./ImageModal.css";
 
 import {
   isImageModalOpenAtom,
@@ -10,40 +11,11 @@ import {
   selectedImagePathAtom,
 } from "./states.ts";
 
-export function BackDrop({ closeModal }: { closeModal: () => void }) {
-  return (
-    <div
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        width: "100%",
-        height: "100vh",
-        backgroundColor: "rgba(0, 0, 0, 0.9)",
-        overflow: "hidden",
-      }}
-      onClick={closeModal}
-    />
-  );
-}
-
 export function CloseButton({ closeModal }: { closeModal: () => void }) {
   return (
     <button
-      style={{
-        position: "absolute",
-        top: "20px",
-        right: "30px",
-        color: "white",
-        fontSize: "40px",
-        cursor: "pointer",
-        background: "none",
-        border: "none",
-        padding: "0",
-        zIndex: "1002",
-      }}
+      className="close-button"
       aria-label="Close modal"
-      tabIndex={0}
       onClick={closeModal}
     >
       ×
@@ -61,30 +33,8 @@ export function ImageContainer() {
   const src = `images/${selectedImagePath}`;
 
   return (
-    <div
-      style={{
-        position: "absolute",
-        top: 0,
-        left: 0,
-        width: "100%",
-        height: "100%",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        zIndex: 1001,
-        pointerEvents: "none",
-      }}
-    >
-      <img
-        style={{
-          maxWidth: "100%",
-          maxHeight: "100%",
-          objectFit: "contain",
-          padding: "20px",
-          pointerEvents: "auto",
-        }}
-        src={src}
-      />
+    <div className="image-container">
+      <img src={src} />
     </div>
   );
 }
@@ -94,31 +44,21 @@ export default function ImageModal() {
   const [selectedImageIndex] = useAtom(selectedImageIndexAtom);
   const [, onShowNextImage] = useAtom(onShowNextImageAtom);
   const [currentImages] = useAtom(currentImagesAtom);
-
-  const display = isImageModalOpen ? "flex" : "none";
+  const dialogRef = useRef<HTMLDialogElement>(null);
 
   const closeModal = useCallback(() => {
+    dialogRef.current?.close();
     setIsModalOpen(false);
-    document.documentElement.style.overflow = "auto";
-    document.body.style.overflow = "auto";
   }, [setIsModalOpen]);
 
-  const showModal = useCallback(() => {
-    document.documentElement.style.overflow = "hidden";
-    document.body.style.overflow = "hidden";
-  }, []);
-
-  // キーボード操作とスワイプ操作の設定
+  // スワイプ操作とキーボード操作の設定
   useEffect(() => {
-    if (!isImageModalOpen) return;
+    if (!isImageModalOpen || !dialogRef.current) return;
 
-    showModal();
-
-    const modal = document.getElementById("image-modal");
-    if (!modal) return;
+    dialogRef.current.showModal();
 
     // ハンマーJSでスワイプ操作を設定
-    const hammer = new Hammer(modal);
+    const hammer = new Hammer(dialogRef.current);
     hammer.on("swipeleft", () => {
       onShowNextImage(1);
     });
@@ -126,11 +66,9 @@ export default function ImageModal() {
       onShowNextImage(-1);
     });
 
-    // キーボード操作
+    // 左右キー操作
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        closeModal();
-      } else if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+      if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
         // モディファイアキーが押されている場合は無視
         if (e.shiftKey || e.ctrlKey || e.altKey || e.metaKey) {
           return;
@@ -139,36 +77,31 @@ export default function ImageModal() {
       }
     };
 
-    document.addEventListener("keydown", handleKeyDown);
+    dialogRef.current.addEventListener("keydown", handleKeyDown);
     return () => {
       hammer.destroy();
-      document.removeEventListener("keydown", handleKeyDown);
+      dialogRef.current?.removeEventListener("keydown", handleKeyDown);
     };
-  }, [
-    isImageModalOpen,
-    selectedImageIndex,
-    currentImages,
-    onShowNextImage,
-    closeModal,
-    showModal,
-  ]);
+  }, [isImageModalOpen, selectedImageIndex, currentImages, onShowNextImage]);
+
+  const onClick = useCallback(
+    (e: React.MouseEvent) => {
+      if (e.target === dialogRef.current) {
+        closeModal();
+      }
+    },
+    [closeModal]
+  );
 
   return (
-    <div
-      id="image-modal"
-      style={{
-        display,
-        position: "fixed",
-        top: 0,
-        left: 0,
-        width: "100%",
-        height: "100vh",
-        zIndex: 1000,
-      }}
+    <dialog
+      ref={dialogRef}
+      className="dialog-modal"
+      onClick={onClick}
+      onClose={closeModal}
     >
-      <BackDrop closeModal={closeModal} />
       <CloseButton closeModal={closeModal} />
       <ImageContainer />
-    </div>
+    </dialog>
   );
 }
