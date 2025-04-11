@@ -7,6 +7,19 @@ body {
   background-color: #f8f9fa;
 }
 
+.header-container {
+  position: sticky;
+  top: 0;
+  background: #f8f9fa;
+  padding: 20px 0;
+  z-index: 100;
+  margin: -20px;
+  padding-left: 20px;
+  padding-right: 20px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+  border-bottom: 1px solid #e9ecef;
+}
+
 .app-header {
   font-size: 1.2rem;
   color: #666;
@@ -65,22 +78,31 @@ body {
 
 #controls {
   display: flex;
-  gap: 12px;
-  margin-bottom: 24px;
+  gap: 8px;
+  margin-bottom: 16px;
+  align-items: center;
 }
 
-button {
-  padding: 8px 16px;
-  background: #4263eb;
-  color: white;
-  border: none;
+button, select {
+  padding: 6px 12px;
+  background: #e9ecef;
+  color: #212529;
+  border: 1px solid #ced4da;
   border-radius: 4px;
   cursor: pointer;
-  transition: background 0.2s;
+  font-size: 0.9rem;
+  font-family: inherit;
 }
 
-button:hover {
-  background: #364fc7;
+select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  padding-right: 28px;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23495057'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 16px;
 }
 
 button:focus-visible,
