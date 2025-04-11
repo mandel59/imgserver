@@ -57,18 +57,18 @@ export function ImageIcon({
   };
 
   return (
-    <div className="file-item">
-      <div 
-        className="file-icon"
-        tabIndex={0}
-        onClick={openImage}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            openImage();
-          }
-        }}
-      >
+    <div 
+      className="file-item"
+      tabIndex={0}
+      onClick={openImage}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          openImage();
+        }
+      }}
+    >
+      <div className="file-icon">
         <picture>
           <source
             srcSet={`/images/${file.path}?width=${width*2}&height=${height*2}&fit=${fit}&format=webp 2x`}
