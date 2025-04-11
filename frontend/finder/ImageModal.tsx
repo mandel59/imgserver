@@ -141,6 +141,7 @@ export default function ImageModal() {
 
   return (
     <dialog
+      aria-label="Image"
       ref={dialogRef}
       className="dialog-modal"
       onClick={onClick}

@@ -35,6 +35,7 @@ export function IconWithName({
     <div
       className="file-item"
       data-file-name={file.name}
+      role="button"
       tabIndex={0}
       onClick={onClick}
       onKeyDown={onKeyDown}
