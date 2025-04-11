@@ -5,6 +5,7 @@ import { stream } from "hono/streaming";
 import { join, normalize, extname } from "node:path/posix";
 import { readdir, stat } from "node:fs/promises";
 import sharp from "sharp";
+import crypto from "node:crypto";
 
 const imageExtensions = [
   ".jpg",
@@ -48,27 +49,28 @@ app.get("/images/*", etag(), async (c) => {
     }
 
     // クエリパラメータからリサイズ設定を取得
-    const width = c.req.query('width');
-    const height = c.req.query('height');
-    const fit = c.req.query('fit');
+    const width = c.req.query("width");
+    const height = c.req.query("height");
+    const fit = c.req.query("fit");
+    const format = c.req.query("format");
 
-    // ETag生成 (リサイズパラメータがある場合は含める)
-    const mtime = fileInfo.mtime?.getTime();
-    const fileSize = fileInfo.size;
-    let etagValue = `"${mtime.toString(16)}-${fileSize.toString(16)}"`;
-    
-    if (width || height || fit) {
-      const paramsHash = Buffer.from(`${width}-${height}-${fit}`).toString('base64').slice(0, 8);
-      etagValue = `"${mtime.toString(16)}-${fileSize.toString(16)}-${paramsHash}"`;
+    const validFormats = ["png", "jpeg", "webp", "avif"] as const;
+    if (format && !validFormats.includes(format as any)) {
+      return c.json(
+        {
+          error: `Invalid format parameter. Valid values are: ${validFormats.join(
+            ", "
+          )}`,
+        },
+        400
+      );
     }
-    
-    c.header("ETag", etagValue);
-    
+
     // リサイズパラメータのバリデーション
     if (width || height) {
       const numWidth = width ? parseInt(width) : undefined;
       const numHeight = height ? parseInt(height) : undefined;
-      
+
       if (
         (numWidth && (isNaN(numWidth) || numWidth <= 0 || numWidth > 4000)) ||
         (numHeight && (isNaN(numHeight) || numHeight <= 0 || numHeight > 4000))
@@ -79,22 +81,89 @@ app.get("/images/*", etag(), async (c) => {
 
     // sharpを使ってメタデータを除去し、必要に応じてリサイズ
     const image = sharp(filePath);
+    const metadata = await image.metadata();
+    const originalFormat = metadata.format;
+
+    // ETag生成 (リサイズパラメータがある場合は含める)
+    const mtime = fileInfo.mtime?.getTime();
+    const fileSize = fileInfo.size;
+    let etagValue = `"${mtime.toString(16)}-${fileSize.toString(16)}"`;
+
+    if (width || height || fit || format) {
+      const paramsHash = Buffer.from(
+        JSON.stringify({
+          width: width || undefined,
+          height: height || undefined,
+          fit: fit || undefined,
+          format: format || undefined,
+        })
+      ).toString("hex");
+
+      etagValue = `"${mtime.toString(16)}-${fileSize.toString(
+        16
+      )}-${paramsHash}"`;
+    }
+
+    c.header("ETag", etagValue);
+
     if (width || height) {
-      const validFitModes = ['cover', 'contain', 'fill', 'inside', 'outside'] as const;
-      const fitParam = c.req.query('fit');
-      const fitMode = fitParam as typeof validFitModes[number] | undefined;
-      
+      const validFitModes = [
+        "cover",
+        "contain",
+        "fill",
+        "inside",
+        "outside",
+      ] as const;
+      const fitParam = c.req.query("fit");
+      const fitMode = fitParam as (typeof validFitModes)[number] | undefined;
+
       if (fitParam && !validFitModes.includes(fitParam as any)) {
-        return c.json({ error: `Invalid fit parameter. Valid values are: ${validFitModes.join(', ')}` }, 400);
+        return c.json(
+          {
+            error: `Invalid fit parameter. Valid values are: ${validFitModes.join(
+              ", "
+            )}`,
+          },
+          400
+        );
       }
       image.resize({
         width: width ? parseInt(width) : undefined,
         height: height ? parseInt(height) : undefined,
         withoutEnlargement: true, // 元画像より大きくしない
-        fit: fitMode || 'inside' // アスペクト比を維持
+        fit: fitMode || "inside", // アスペクト比を維持
       });
     }
-    
+
+    // フォーマット変換とContent-Type設定
+    if (format) {
+      image.toFormat(format as any);
+    }
+
+    switch (format || originalFormat) {
+      case "png":
+        c.header("Content-Type", "image/png");
+        break;
+      case "jpeg":
+        c.header("Content-Type", "image/jpeg");
+        break;
+      case "webp":
+        c.header("Content-Type", "image/webp");
+        break;
+      case "avif":
+        c.header("Content-Type", "image/avif");
+        break;
+      case "gif":
+        c.header("Content-Type", "image/gif");
+        break;
+      case "tiff":
+        c.header("Content-Type", "image/tiff");
+        break;
+      default:
+        // デフォルトは元のフォーマットを維持
+        break;
+    }
+
     return stream(c, async (stream) => {
       await stream.write(await image.toBuffer());
     });
