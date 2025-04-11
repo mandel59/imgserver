@@ -83,8 +83,6 @@ export function FolderIcon({
   );
 }
 
-type FitMode = "cover" | "contain" | "fill" | "inside" | "outside";
-
 export function ImageIcon({
   file,
   width,
