@@ -50,13 +50,11 @@ body {
 }
 
 .file-icon:focus-visible {
-  outline: 2px solid #4a90e2;
-  outline-offset: 2px;
-  border-radius: 4px;
+  outline: none;
 }
 
-.file-icon:focus-visible img {
-  border-radius: 4px;
+.file-item:focus-within {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
 
 .file-icon {
