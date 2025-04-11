@@ -21,7 +21,7 @@ const imageExtensions = [
 const app = new Hono();
 
 // アクセスログミドルウェア
-app.use(logger());
+app.use("/api/*", logger());
 
 // 画像ファイル配信 (エラーハンドリング強化版)
 app.get("/images/*", etag(), async (c) => {
