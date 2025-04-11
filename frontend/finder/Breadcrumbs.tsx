@@ -1,13 +1,11 @@
 import { useAtom } from "jotai";
 import { useCallback } from "react";
-import { onNavigateAtom } from "./states.ts";
+import { currentPathAtom, onNavigateAtom } from "./states.ts";
 import "./Breadcrumbs.css";
 
-interface BreadcrumbsProps {
-  currentPath: string;
-}
+export default function Breadcrumbs() {
+  const [currentPath] = useAtom(currentPathAtom);
 
-export default function Breadcrumbs({ currentPath }: BreadcrumbsProps) {
   const [, onNavigate] = useAtom(onNavigateAtom);
 
   const handleRootClick = useCallback(
@@ -62,7 +60,9 @@ export default function Breadcrumbs({ currentPath }: BreadcrumbsProps) {
                 onClick={(e) => handlePathClick(e, currentPartPath)}
                 onKeyDown={(e) => handleKeyDown(e, currentPartPath)}
                 className={`breadcrumbs-link ${
-                  currentPartPath === currentPath ? "breadcrumbs-link-current" : ""
+                  currentPartPath === currentPath
+                    ? "breadcrumbs-link-current"
+                    : ""
                 }`}
                 tabIndex={0}
               >
