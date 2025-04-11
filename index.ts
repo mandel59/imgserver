@@ -1,13 +1,14 @@
 import Bun from "bun";
-import app from "./backend/app";
+import app, { listen, port } from "./backend/app";
 import finder from "./frontend/finder/index.html";
 
 Bun.serve({
-  port: 8000,
+  hostname: listen,
+  port,
   routes: {
     "/": finder,
   },
   fetch: app.fetch,
 });
 
-console.log("Server running on http://localhost:8000");
+console.log(`Server running on http://${listen}:${port}`);

@@ -4,7 +4,32 @@ import { etag } from "hono/etag";
 import { stream } from "hono/streaming";
 import { join, extname } from "node:path/posix";
 import { readdir, stat } from "node:fs/promises";
+import { parseArgs } from "node:util";
 import sharp from "sharp";
+
+const {
+  values: { listen = "127.0.0.1", port = "8000", dir: imagesDir = "." },
+} = parseArgs({
+  args: process.argv,
+  options: {
+    listen: {
+      type: "string",
+      short: "l",
+    },
+    port: {
+      type: "string",
+      short: "p",
+    },
+    dir: {
+      type: "string",
+      short: "d",
+    },
+  },
+  strict: true,
+  allowPositionals: true,
+});
+
+export { listen, port, imagesDir };
 
 const imageExtensions = [
   ".jpg",
@@ -26,18 +51,17 @@ app.use("/api/*", logger());
 app.get("/images/*", etag(), async (c) => {
   const relativePath = c.req.path.replace(/^\/images\//, "");
 
-  const filePath = join("images", relativePath);
-
   // セキュリティチェックと隠しファイルチェック
   if (
-    filePath.includes("\0") ||
-    filePath.includes("\\") ||
-    filePath.includes("/..") ||
-    filePath.split("/").some((part: string) => part.startsWith("."))
+    relativePath.includes("\0") ||
+    relativePath.includes("\\") ||
+    relativePath.split("/").some((part: string) => part.startsWith("."))
   ) {
-    console.error(`Invalid path attempt: ${filePath}`);
+    console.error(`Invalid path attempt: ${relativePath}`);
     return c.json({ error: "File not found" }, 404);
   }
+
+  const filePath = join(imagesDir, relativePath);
 
   try {
     const fileInfo = await stat(filePath);
@@ -188,18 +212,17 @@ app.get("/images/*", etag(), async (c) => {
 app.get("/api/images", async (c) => {
   const { sort = "name", path = "" } = c.req.query();
 
-  const dirPath = join("images", path);
-
   // セキュリティチェックと隠しファイルチェック
   if (
-    dirPath.includes("\0") ||
-    dirPath.includes("\\") ||
-    dirPath.includes("/..") ||
-    dirPath.split("/").some((part: string) => part.startsWith("."))
+    path.includes("\0") ||
+    path.includes("\\") ||
+    path.split("/").some((part: string) => part.startsWith("."))
   ) {
-    console.error(`Invalid path attempt: ${dirPath}`);
+    console.error(`Invalid path attempt: ${path}`);
     return c.json({ error: "File not found" }, 404);
   }
+
+  const dirPath = join(imagesDir, path);
 
   const items: any[] = [];
 
