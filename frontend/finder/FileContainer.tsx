@@ -7,39 +7,59 @@ import {
   onImageModalOpenAtom,
 } from "./states.ts";
 
-export function IconWithName({ 
-  icon, 
+export function IconWithName({
+  icon,
   file,
   onClick,
   onKeyDown,
-  children
-}: { 
-  icon: string; 
+  children,
+  width,
+  height,
+  style,
+}: {
+  icon: string;
   file: FileItem;
   onClick?: () => void;
   onKeyDown?: (e: React.KeyboardEvent) => void;
   children?: React.ReactNode;
+  width: number;
+  height: number;
+  style?: React.CSSProperties;
 }) {
+  const iconStyle = {
+    "--thumbnail-height": `${height}px`,
+    "--icon-size": `${Math.min(width, height) * 0.4}px`,
+    ...style,
+  } as React.CSSProperties;
   return (
-    <div 
-      className="file-item" 
+    <div
+      className="file-item"
       tabIndex={0}
       onClick={onClick}
       onKeyDown={onKeyDown}
+      style={iconStyle}
     >
       <div className="file-icon">
-      {children || <div style={{ fontSize: "var(--icon-size, 56px)" }}>{icon}</div>}
+        {children || (
+          <div style={{ fontSize: "var(--icon-size, 56px)" }}>{icon}</div>
+        )}
       </div>
-      <div className="file-name">
-        {file.name}
-      </div>
+      <div className="file-name">{file.name}</div>
     </div>
   );
 }
 
-export function FolderIcon({ file }: { file: FileItem }) {
+export function FolderIcon({
+  file,
+  width,
+  height,
+}: {
+  file: FileItem;
+  width: number;
+  height: number;
+}) {
   const [, onNavigate] = useAtom(onNavigateAtom);
-  
+
   const handleClick = () => {
     onNavigate(file.path);
   };
@@ -52,9 +72,11 @@ export function FolderIcon({ file }: { file: FileItem }) {
   };
 
   return (
-    <IconWithName 
-      icon="📁" 
+    <IconWithName
+      icon="📁"
       file={file}
+      width={width}
+      height={height}
       onClick={handleClick}
       onKeyDown={handleKeyDown}
     />
@@ -65,14 +87,12 @@ type FitMode = "cover" | "contain" | "fill" | "inside" | "outside";
 
 export function ImageIcon({
   file,
-  width = 150,
-  height = 150,
-  fit = "cover",
+  width,
+  height,
 }: {
   file: FileItem;
-  width?: number;
-  height?: number;
-  fit?: FitMode;
+  width: number;
+  height: number;
 }) {
   const [, onImageModalOpen] = useAtom(onImageModalOpenAtom);
   const [currentImages] = useAtom(currentImagesAtom);
@@ -88,6 +108,8 @@ export function ImageIcon({
     <IconWithName
       icon=""
       file={file}
+      width={width}
+      height={height}
       onClick={openImage}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
@@ -96,34 +118,48 @@ export function ImageIcon({
         }
       }}
     >
-      <picture>
-        <source
-          srcSet={`/images/${file.path}?width=${width*2}&height=${height*2}&fit=${fit}&format=webp 2x`}
-        />
-        <img
-          loading="lazy"
-          src={`/images/${file.path}?width=${width}&height=${height}&fit=${fit}&format=webp`}
-          srcSet={`/images/${file.path}?width=${width*2}&height=${height*2}&fit=${fit}&format=webp 2x`}
-          style={{
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-          }}
-          alt={file.name}
-        />
-      </picture>
+      <img
+        loading="lazy"
+        src={`/images/${file.path}?height=${height}&format=webp`}
+        srcSet={`/images/${file.path}?&height=${height * 2}&format=webp 2x`}
+        width={width}
+        height={height}
+        style={{
+          width: `100%`,
+          height: `100%`,
+          objectFit: "contain",
+        }}
+      />
     </IconWithName>
   );
 }
 
-export function RegularFileIcon({ file }: { file: FileItem }) {
-  return <IconWithName icon="📄" file={file} />;
+export function RegularFileIcon({
+  file,
+  width,
+  height,
+}: {
+  file: FileItem;
+  width: number;
+  height: number;
+}) {
+  return <IconWithName icon="📄" file={file} width={width} height={height} />;
 }
 
-export function FileIcon({ file }: { file: FileItem }) {
-  if (file.isDirectory) return <FolderIcon file={file} />;
-  if (file.isImage) return <ImageIcon file={file} />;
-  return <RegularFileIcon file={file} />;
+export function FileIcon({
+  file,
+  width = 150,
+  height = 150,
+}: {
+  file: FileItem;
+  width?: number;
+  height?: number;
+}) {
+  if (file.isDirectory)
+    return <FolderIcon file={file} width={width} height={height} />;
+  if (file.isImage)
+    return <ImageIcon file={file} width={width} height={height} />;
+  return <RegularFileIcon file={file} width={width} height={height} />;
 }
 
 export default function FileContainer() {
