@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { logger } from "hono/logger";
 import { etag } from "hono/etag";
 import { stream } from "hono/streaming";
-import { join, normalize, extname } from "node:path/posix";
+import { join, extname } from "node:path/posix";
 import { readdir, stat } from "node:fs/promises";
 import sharp from "sharp";
 
