@@ -104,6 +104,10 @@ export function ImageIcon({
     }
   };
 
+  const u = new URL("http://example.com/");
+  u.pathname = file.path;
+  const encodedPath = u.pathname;
+
   return (
     <IconWithName
       icon=""
@@ -120,8 +124,8 @@ export function ImageIcon({
     >
       <img
         loading="lazy"
-        src={`/images/${file.path}?height=${height}&format=webp`}
-        srcSet={`/images/${file.path}?&height=${height * 2}&format=webp 2x`}
+        src={`/images${encodedPath}?height=${height}&format=webp`}
+        srcSet={`/images${encodedPath}?&height=${height * 2}&format=webp 2x`}
         width={width}
         height={height}
         style={{
