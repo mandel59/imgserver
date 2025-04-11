@@ -1,8 +1,8 @@
 .breadcrumbs-container {
   padding: 12px 16px;
-  background-color: #fff;
+  background-color: var(--card-bg);
   border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  box-shadow: var(--card-shadow);
   text-align: left;
   flex-grow: 1;
   margin: 0 16px;
@@ -15,13 +15,14 @@
     margin: 0;
     border-radius: 0;
     box-shadow: none;
+    background-color: var(--bg-color);
   }
 }
 
 .breadcrumbs-link {
   display: inline-block;
   margin-right: 8px;
-  color: #4263eb;
+  color: var(--link-color, #4263eb);
   text-decoration: none;
   font-weight: 500;
   font-size: 14px;
@@ -31,16 +32,18 @@
 }
 
 .breadcrumbs-link:hover {
-  color: #364fc7;
+  color: var(--link-hover-color, #364fc7);
   text-decoration: underline;
 }
 
 .breadcrumbs-link-current {
-  color: #212529 !important;
+  color: var(--text-color) !important;
+  opacity: 0.9;
 }
 
 .breadcrumbs-separator {
   margin-right: 8px;
-  color: #868e96;
+  color: var(--text-color);
+  opacity: 0.6;
   font-size: 14px;
 }
