@@ -1,6 +1,7 @@
 import { useAtom } from "jotai";
 import { useCallback } from "react";
 import { onNavigateAtom } from "./states.ts";
+import "./Breadcrumbs.css";
 
 interface BreadcrumbsProps {
   currentPath: string;
@@ -36,12 +37,12 @@ export default function Breadcrumbs({ currentPath }: BreadcrumbsProps) {
   );
 
   return (
-    <div style={{ marginBottom: "10px" }}>
+    <div className="breadcrumbs-container">
       <a
         href="?path="
         onClick={handleRootClick}
         onKeyDown={(e) => handleKeyDown(e, "")}
-        style={{ marginRight: "5px" }}
+        className="breadcrumbs-link"
         tabIndex={0}
       >
         Home
@@ -55,12 +56,14 @@ export default function Breadcrumbs({ currentPath }: BreadcrumbsProps) {
             .join("/");
           return (
             <span key={currentPartPath}>
-              <span style={{ marginRight: "5px" }}>{">"}</span>
+              <span className="breadcrumbs-separator">{">"}</span>
               <a
                 href={`?path=${encodeURIComponent(currentPartPath)}`}
                 onClick={(e) => handlePathClick(e, currentPartPath)}
                 onKeyDown={(e) => handleKeyDown(e, currentPartPath)}
-                style={{ marginRight: "5px" }}
+                className={`breadcrumbs-link ${
+                  currentPartPath === currentPath ? "breadcrumbs-link-current" : ""
+                }`}
                 tabIndex={0}
               >
                 {part}
