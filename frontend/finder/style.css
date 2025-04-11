@@ -106,7 +106,6 @@ body {
 #controls {
   display: flex;
   gap: 8px;
-  margin-bottom: 16px;
   align-items: center;
 }
 
