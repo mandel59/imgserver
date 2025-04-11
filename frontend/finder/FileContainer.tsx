@@ -104,16 +104,22 @@ export function ImageIcon({
           overflow: "hidden",
         }}
       >
-        <img
-          loading="lazy"
-          src={`/images/${file.path}?width=${width}&height=${height}&fit=${fit}&format=webp`}
-          style={{
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-          }}
-          alt={file.name}
-        />
+        <picture>
+          <source
+            srcSet={`/images/${file.path}?width=${width*2}&height=${height*2}&fit=${fit}&format=webp 2x`}
+          />
+          <img
+            loading="lazy"
+            src={`/images/${file.path}?width=${width}&height=${height}&fit=${fit}&format=webp`}
+            srcSet={`/images/${file.path}?width=${width*2}&height=${height*2}&fit=${fit}&format=webp 2x`}
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+            }}
+            alt={file.name}
+          />
+        </picture>
       </div>
       <div
         style={{
