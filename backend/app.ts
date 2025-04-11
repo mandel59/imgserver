@@ -204,8 +204,8 @@ app.get("/api/images", async (c) => {
 
   // ディレクトリとファイル情報を収集 (隠しファイルは除外)
   for (const fileName of await readdir(dirPath)) {
-    // 隠しファイル(.で始まる)はスキップ
-    if (fileName.startsWith(".")) {
+    // 隠しファイル(.で始まる)と名前に`\`を含むファイルはスキップ
+    if (/^\.|\\/g.test(fileName)) {
       continue;
     }
 
