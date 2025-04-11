@@ -31,6 +31,7 @@ app.get("/images/*", etag(), async (c) => {
 
   // セキュリティチェックと隠しファイルチェック
   if (
+    filePath.includes("\0") ||
     filePath.includes("\\") ||
     filePath.includes("/..") ||
     filePath.split("/").some((part: string) => part.startsWith("."))
@@ -192,6 +193,7 @@ app.get("/api/images", async (c) => {
 
   // セキュリティチェックと隠しファイルチェック
   if (
+    dirPath.includes("\0") ||
     dirPath.includes("\\") ||
     dirPath.includes("/..") ||
     dirPath.split("/").some((part: string) => part.startsWith("."))
