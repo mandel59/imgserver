@@ -9,8 +9,8 @@ import {
 
 export function IconWithName({ icon, file }: { icon: string; file: FileItem }) {
   return (
-    <div className="file-item">
-      <div className="file-icon" tabIndex={0}>
+    <div className="file-item" tabIndex={0}>
+      <div className="file-icon">
         <div style={{ fontSize: "60px" }}>{icon}</div>
       </div>
       <div className="file-name">

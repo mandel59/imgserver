@@ -49,11 +49,15 @@ body {
   outline: none;
 }
 
-.file-icon:focus-visible {
-  outline: none;
+.file-item:focus-visible {
+  outline: 2px solid #4a90e2;
+  outline-offset: 2px;
 }
 
-.file-item:focus-within {
+.file-item:hover,
+.file-item:focus-within,
+.file-item:focus-visible {
+  transform: translateY(-4px);
   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
 
