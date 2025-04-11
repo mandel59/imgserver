@@ -42,6 +42,15 @@
   opacity: 0.9;
 }
 
+.breadcrumbs-link-home {
+  color: var(--link-color, #4263eb);
+}
+
+.breadcrumbs-link-home.breadcrumbs-link-current {
+  color: var(--text-color) !important;
+  opacity: 0.9;
+}
+
 .breadcrumbs-separator {
   margin-right: 8px;
   color: var(--text-color);

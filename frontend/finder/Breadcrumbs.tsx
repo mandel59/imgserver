@@ -40,7 +40,9 @@ export default function Breadcrumbs() {
         href="?path="
         onClick={handleRootClick}
         onKeyDown={(e) => handleKeyDown(e, "")}
-        className="breadcrumbs-link"
+        className={`breadcrumbs-link breadcrumbs-link-home ${
+          currentPath === "" ? "breadcrumbs-link-current" : ""
+        }`}
         tabIndex={0}
       >
         Home
