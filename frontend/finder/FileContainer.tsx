@@ -11,12 +11,14 @@ export function IconWithName({
   icon, 
   file,
   onClick,
-  onKeyDown
+  onKeyDown,
+  children
 }: { 
   icon: string; 
   file: FileItem;
   onClick?: () => void;
   onKeyDown?: (e: React.KeyboardEvent) => void;
+  children?: React.ReactNode;
 }) {
   return (
     <div 
@@ -26,7 +28,7 @@ export function IconWithName({
       onKeyDown={onKeyDown}
     >
       <div className="file-icon">
-        <div style={{ fontSize: "60px" }}>{icon}</div>
+        {children || <div style={{ fontSize: "60px" }}>{icon}</div>}
       </div>
       <div className="file-name">
         {file.name}
@@ -83,9 +85,9 @@ export function ImageIcon({
   };
 
   return (
-    <div 
-      className="file-item"
-      tabIndex={0}
+    <IconWithName
+      icon=""
+      file={file}
       onClick={openImage}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
@@ -94,28 +96,23 @@ export function ImageIcon({
         }
       }}
     >
-      <div className="file-icon">
-        <picture>
-          <source
-            srcSet={`/images/${file.path}?width=${width*2}&height=${height*2}&fit=${fit}&format=webp 2x`}
-          />
-          <img
-            loading="lazy"
-            src={`/images/${file.path}?width=${width}&height=${height}&fit=${fit}&format=webp`}
-            srcSet={`/images/${file.path}?width=${width*2}&height=${height*2}&fit=${fit}&format=webp 2x`}
-            style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-            }}
-            alt={file.name}
-          />
-        </picture>
-      </div>
-      <div className="file-name">
-        {file.name}
-      </div>
-    </div>
+      <picture>
+        <source
+          srcSet={`/images/${file.path}?width=${width*2}&height=${height*2}&fit=${fit}&format=webp 2x`}
+        />
+        <img
+          loading="lazy"
+          src={`/images/${file.path}?width=${width}&height=${height}&fit=${fit}&format=webp`}
+          srcSet={`/images/${file.path}?width=${width*2}&height=${height*2}&fit=${fit}&format=webp 2x`}
+          style={{
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+          }}
+          alt={file.name}
+        />
+      </picture>
+    </IconWithName>
   );
 }
 
