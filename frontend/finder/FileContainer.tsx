@@ -106,7 +106,7 @@ export function ImageIcon({
       >
         <img
           loading="lazy"
-          src={`/images/${file.path}?width=${width}&height=${height}&fit=${fit}`}
+          src={`/images/${file.path}?width=${width}&height=${height}&fit=${fit}&format=webp`}
           style={{
             width: "100%",
             height: "100%",
