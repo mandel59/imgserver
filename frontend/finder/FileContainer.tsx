@@ -7,9 +7,24 @@ import {
   onImageModalOpenAtom,
 } from "./states.ts";
 
-export function IconWithName({ icon, file }: { icon: string; file: FileItem }) {
+export function IconWithName({ 
+  icon, 
+  file,
+  onClick,
+  onKeyDown
+}: { 
+  icon: string; 
+  file: FileItem;
+  onClick?: () => void;
+  onKeyDown?: (e: React.KeyboardEvent) => void;
+}) {
   return (
-    <div className="file-item" tabIndex={0}>
+    <div 
+      className="file-item" 
+      tabIndex={0}
+      onClick={onClick}
+      onKeyDown={onKeyDown}
+    >
       <div className="file-icon">
         <div style={{ fontSize: "60px" }}>{icon}</div>
       </div>
@@ -22,14 +37,25 @@ export function IconWithName({ icon, file }: { icon: string; file: FileItem }) {
 
 export function FolderIcon({ file }: { file: FileItem }) {
   const [, onNavigate] = useAtom(onNavigateAtom);
+  
+  const handleClick = () => {
+    onNavigate(file.path);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      onNavigate(file.path);
+    }
+  };
+
   return (
-    <div
-      onClick={() => {
-        onNavigate(file.path);
-      }}
-    >
-      <IconWithName icon="📁" file={file} />
-    </div>
+    <IconWithName 
+      icon="📁" 
+      file={file}
+      onClick={handleClick}
+      onKeyDown={handleKeyDown}
+    />
   );
 }
 
