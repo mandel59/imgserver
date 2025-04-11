@@ -1,5 +1,10 @@
-import { useAtom } from "jotai";
-import React, { useEffect, useCallback, useRef } from "react";
+import { useAtom, useAtomValue, useStore } from "jotai";
+import React, {
+  useEffect,
+  useCallback,
+  useRef,
+  type ReactEventHandler,
+} from "react";
 import Hammer from "hammerjs";
 import { FaTimes } from "react-icons/fa";
 import "./ImageModal.css";
@@ -41,6 +46,7 @@ export function ImageContainer() {
 }
 
 export default function ImageModal() {
+  const store = useStore();
   const [isImageModalOpen, setIsModalOpen] = useAtom(isImageModalOpenAtom);
   const [selectedImageIndex] = useAtom(selectedImageIndexAtom);
   const [, onShowNextImage] = useAtom(onShowNextImageAtom);
@@ -56,12 +62,36 @@ export default function ImageModal() {
     const dialog = dialogRef.current;
     if (!dialog) return;
 
+    const handleClose = () => {
+      const index = store.get(selectedImageIndexAtom);
+      const images = store.get(currentImagesAtom);
+      const image = images[index ?? -1];
+      if (image) {
+        const el = document.querySelector<HTMLElement>(
+          `[data-file-name="${image.name}"]`
+        );
+        console.log(el);
+        el?.focus();
+      }
+    };
+
+    const handleCancel = (e: Event) => {
+      requestAnimationFrame(() => handleClose());
+    };
+
+    dialog.addEventListener("close", handleClose);
+    dialog.addEventListener("cancel", handleCancel);
+
     if (isImageModalOpen) {
-      if (!dialog.open) dialog.showModal();
-      document.body.style.overflow = 'hidden';
+      if (!dialog.open) {
+        dialog.showModal();
+        document.body.style.overflow = "hidden";
+      }
     } else {
-      if (dialog.open) dialog.close();
-      document.body.style.overflow = '';
+      if (dialog.open) {
+        dialog.close();
+        document.body.style.overflow = "";
+      }
     }
 
     // ハンマーJSでスワイプ操作を設定
@@ -86,11 +116,19 @@ export default function ImageModal() {
 
     dialog.addEventListener("keydown", handleKeyDown);
     return () => {
+      dialog.removeEventListener("close", handleClose);
+      dialog.removeEventListener("cancel", handleCancel);
       hammer.destroy();
       dialog.removeEventListener("keydown", handleKeyDown);
-      document.body.style.overflow = '';
+      document.body.style.overflow = "";
     };
-  }, [isImageModalOpen, selectedImageIndex, currentImages, onShowNextImage]);
+  }, [
+    isImageModalOpen,
+    selectedImageIndex,
+    currentImages,
+    onShowNextImage,
+    store,
+  ]);
 
   const onClick = useCallback(
     (e: React.MouseEvent) => {
