@@ -1,8 +1,12 @@
 {
-  "name": "egviewer",
+  "name": "@mandel59/imgserver",
+  "version": "0.0.1",
   "module": "index.ts",
   "type": "module",
   "private": true,
+  "bin": {
+    "imgserver": "index.ts"
+  },
   "scripts": {
     "dev": "bun run --watch index.ts --dir images",
     "test": "bun test"
@@ -19,6 +23,7 @@
   "dependencies": {
     "@tanstack/query-core": "^5.72.2",
     "@types/path-browserify": "^1.0.3",
+    "bun": "^1.2.9",
     "hammerjs": "^2.0.8",
     "hono": "^4.7.6",
     "immer": "^10.1.1",
