@@ -85,13 +85,13 @@ export default function ImageModal() {
     if (isImageModalOpen) {
       if (!dialog.open) {
         dialog.showModal();
-        document.body.style.overflow = "hidden";
       }
+      document.body.style.overflow = "hidden";
     } else {
       if (dialog.open) {
         dialog.close();
-        document.body.style.overflow = "";
       }
+      document.body.style.overflow = "";
     }
 
     // ハンマーJSでスワイプ操作を設定
