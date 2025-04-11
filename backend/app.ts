@@ -5,7 +5,6 @@ import { stream } from "hono/streaming";
 import { join, normalize, extname } from "node:path/posix";
 import { readdir, stat } from "node:fs/promises";
 import sharp from "sharp";
-import crypto from "node:crypto";
 
 const imageExtensions = [
   ".jpg",
