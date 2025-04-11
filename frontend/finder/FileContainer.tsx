@@ -9,31 +9,12 @@ import {
 
 export function IconWithName({ icon, file }: { icon: string; file: FileItem }) {
   return (
-    <div
-      style={{
-        width: "200px",
-        height: "222px",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        cursor: "pointer",
-        marginBottom: "10px",
-      }}
-    >
-      <div
-        tabIndex={0}
-        style={{
-          width: "180px",
-          height: "180px",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          margin: "0 auto",
-        }}
-      >
+    <div className="file-item">
+      <div className="file-icon" tabIndex={0}>
         <div style={{ fontSize: "60px" }}>{icon}</div>
-        <div>{file.name}</div>
+      </div>
+      <div className="file-name">
+        {file.name}
       </div>
     </div>
   );
@@ -76,18 +57,9 @@ export function ImageIcon({
   };
 
   return (
-    <div
-      style={{
-        width: "200px",
-        height: "222px",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        cursor: "pointer",
-        marginBottom: "10px",
-      }}
-    >
-      <div
+    <div className="file-item">
+      <div 
+        className="file-icon"
         tabIndex={0}
         onClick={openImage}
         onKeyDown={(e) => {
@@ -95,13 +67,6 @@ export function ImageIcon({
             e.preventDefault();
             openImage();
           }
-        }}
-        style={{
-          width: "180px",
-          height: "180px",
-          position: "relative",
-          margin: "0 auto",
-          overflow: "hidden",
         }}
       >
         <picture>
@@ -121,21 +86,7 @@ export function ImageIcon({
           />
         </picture>
       </div>
-      <div
-        style={{
-          width: "180px",
-          height: "42px",
-          wordWrap: "break-word",
-          textAlign: "center",
-          padding: "5px",
-          boxSizing: "border-box",
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          display: "-webkit-box",
-          WebkitLineClamp: "2",
-          WebkitBoxOrient: "vertical",
-        }}
-      >
+      <div className="file-name">
         {file.name}
       </div>
     </div>

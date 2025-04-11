@@ -1,33 +1,79 @@
 body {
-  font-family: Arial, sans-serif;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
+  color: #333;
+  background-color: #f8f9fa;
 }
 
 #file-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 24px;
+  margin: 32px 0;
+}
+
+.file-item {
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.file-item:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.file-icon {
+  width: 100%;
+  height: 180px;
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-bottom: 20px;
+  align-items: center;
+  justify-content: center;
+  background: #f1f3f5;
+  font-size: 64px;
+}
+
+.file-name {
+  padding: 12px;
+  text-align: center;
+  font-size: 12px;
+  color: #495057;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .image-thumbnail {
-  width: 200px;
-  height: 200px;
+  width: 100%;
+  height: 180px;
   object-fit: cover;
   cursor: pointer;
 }
 
 #controls {
   display: flex;
-  gap: 10px;
-  margin-bottom: 20px;
+  gap: 12px;
+  margin-bottom: 24px;
 }
 
 button {
   padding: 8px 16px;
+  background: #4263eb;
+  color: white;
+  border: none;
+  border-radius: 4px;
   cursor: pointer;
+  transition: background 0.2s;
+}
+
+button:hover {
+  background: #364fc7;
 }
 
 button:focus-visible,
