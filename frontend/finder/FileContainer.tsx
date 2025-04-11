@@ -52,7 +52,19 @@ export function FolderIcon({ file }: { file: FileItem }) {
   );
 }
 
-export function ImageIcon({ file }: { file: FileItem }) {
+type FitMode = "cover" | "contain" | "fill" | "inside" | "outside";
+
+export function ImageIcon({
+  file,
+  width = 180,
+  height = 180,
+  fit = "cover",
+}: {
+  file: FileItem;
+  width?: number;
+  height?: number;
+  fit?: FitMode;
+}) {
   const [, onImageModalOpen] = useAtom(onImageModalOpenAtom);
   const [currentImages] = useAtom(currentImagesAtom);
 
@@ -94,7 +106,7 @@ export function ImageIcon({ file }: { file: FileItem }) {
       >
         <img
           loading="lazy"
-          src={`/images/${file.path}`}
+          src={`/images/${file.path}?width=${width}&height=${height}&fit=${fit}`}
           style={{
             width: "100%",
             height: "100%",

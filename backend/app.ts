@@ -47,13 +47,54 @@ app.get("/images/*", etag(), async (c) => {
       return c.json({ error: "File not found" }, 404);
     }
 
-    // ファイルの更新時刻とサイズからETag生成
+    // クエリパラメータからリサイズ設定を取得
+    const width = c.req.query('width');
+    const height = c.req.query('height');
+    const fit = c.req.query('fit');
+
+    // ETag生成 (リサイズパラメータがある場合は含める)
     const mtime = fileInfo.mtime?.getTime();
     const fileSize = fileInfo.size;
-    c.header("ETag", `"${mtime.toString(16)}-${fileSize.toString(16)}"`);
+    let etagValue = `"${mtime.toString(16)}-${fileSize.toString(16)}"`;
+    
+    if (width || height || fit) {
+      const paramsHash = Buffer.from(`${width}-${height}-${fit}`).toString('base64').slice(0, 8);
+      etagValue = `"${mtime.toString(16)}-${fileSize.toString(16)}-${paramsHash}"`;
+    }
+    
+    c.header("ETag", etagValue);
+    
+    // リサイズパラメータのバリデーション
+    if (width || height) {
+      const numWidth = width ? parseInt(width) : undefined;
+      const numHeight = height ? parseInt(height) : undefined;
+      
+      if (
+        (numWidth && (isNaN(numWidth) || numWidth <= 0 || numWidth > 4000)) ||
+        (numHeight && (isNaN(numHeight) || numHeight <= 0 || numHeight > 4000))
+      ) {
+        return c.json({ error: "Invalid width/height parameters" }, 400);
+      }
+    }
 
-    // sharpを使ってメタデータを除去する
+    // sharpを使ってメタデータを除去し、必要に応じてリサイズ
     const image = sharp(filePath);
+    if (width || height) {
+      const validFitModes = ['cover', 'contain', 'fill', 'inside', 'outside'] as const;
+      const fitParam = c.req.query('fit');
+      const fitMode = fitParam as typeof validFitModes[number] | undefined;
+      
+      if (fitParam && !validFitModes.includes(fitParam as any)) {
+        return c.json({ error: `Invalid fit parameter. Valid values are: ${validFitModes.join(', ')}` }, 400);
+      }
+      image.resize({
+        width: width ? parseInt(width) : undefined,
+        height: height ? parseInt(height) : undefined,
+        withoutEnlargement: true, // 元画像より大きくしない
+        fit: fitMode || 'inside' // アスペクト比を維持
+      });
+    }
+    
     return stream(c, async (stream) => {
       await stream.write(await image.toBuffer());
     });
