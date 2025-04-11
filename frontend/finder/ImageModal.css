@@ -17,6 +17,10 @@
     height: 100lvh;
     background: rgba(0, 0, 0, 0.9);
   }
+
+  &:focus-visible {
+    outline: none;
+  }
 }
 
 .close-button {
