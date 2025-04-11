@@ -14,8 +14,9 @@
   .breadcrumbs-container {
     margin: 0;
     border-radius: 0;
-    box-shadow: none;
-    background-color: var(--bg-color);
+    border-radius: 8px;
+    box-shadow: var(--card-shadow);
+    background-color: var(--card-bg);
   }
 }
 
