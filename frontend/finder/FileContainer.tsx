@@ -28,7 +28,7 @@ export function IconWithName({
       onKeyDown={onKeyDown}
     >
       <div className="file-icon">
-        {children || <div style={{ fontSize: "60px" }}>{icon}</div>}
+      {children || <div style={{ fontSize: "var(--icon-size, 56px)" }}>{icon}</div>}
       </div>
       <div className="file-name">
         {file.name}
@@ -65,8 +65,8 @@ type FitMode = "cover" | "contain" | "fill" | "inside" | "outside";
 
 export function ImageIcon({
   file,
-  width = 180,
-  height = 180,
+  width = 150,
+  height = 150,
   fit = "cover",
 }: {
   file: FileItem;
