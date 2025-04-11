@@ -19,12 +19,15 @@
 }
 
 .breadcrumbs-link {
+  display: inline-block;
   margin-right: 8px;
   color: #4263eb;
   text-decoration: none;
   font-weight: 500;
   font-size: 14px;
   transition: color 0.2s;
+  white-space: normal;
+  word-break: break-all;
 }
 
 .breadcrumbs-link:hover {
