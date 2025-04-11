@@ -48,18 +48,22 @@ export default function ImageModal() {
   const dialogRef = useRef<HTMLDialogElement>(null);
 
   const closeModal = useCallback(() => {
-    dialogRef.current?.close();
     setIsModalOpen(false);
   }, [setIsModalOpen]);
 
-  // スワイプ操作とキーボード操作の設定
+  // モーダルの開閉制御とスワイプ操作
   useEffect(() => {
-    if (!isImageModalOpen || !dialogRef.current) return;
+    const dialog = dialogRef.current;
+    if (!dialog) return;
 
-    dialogRef.current.showModal();
+    if (isImageModalOpen) {
+      if (!dialog.open) dialog.showModal();
+    } else {
+      if (dialog.open) dialog.close();
+    }
 
     // ハンマーJSでスワイプ操作を設定
-    const hammer = new Hammer(dialogRef.current);
+    const hammer = new Hammer(dialog);
     hammer.on("swipeleft", () => {
       onShowNextImage(1);
     });
@@ -78,10 +82,10 @@ export default function ImageModal() {
       }
     };
 
-    dialogRef.current.addEventListener("keydown", handleKeyDown);
+    dialog.addEventListener("keydown", handleKeyDown);
     return () => {
       hammer.destroy();
-      dialogRef.current?.removeEventListener("keydown", handleKeyDown);
+      dialog.removeEventListener("keydown", handleKeyDown);
     };
   }, [isImageModalOpen, selectedImageIndex, currentImages, onShowNextImage]);
 
