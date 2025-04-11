@@ -7,6 +7,13 @@ body {
   background-color: #f8f9fa;
 }
 
+.app-header {
+  font-size: 1.2rem;
+  color: #666;
+  margin-bottom: 16px;
+  font-weight: normal;
+}
+
 #file-container {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));

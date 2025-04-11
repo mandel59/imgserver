@@ -12,10 +12,10 @@ export default function Finder() {
 
   return (
     <>
-      <h1>Image Viewer</h1>
+      <h1 className="app-header">Image Viewer</h1>
       <ImageModal />
-      <Controls />
       <Breadcrumbs currentPath={currentPath} />
+      <Controls />
       <FileContainer />
     </>
   );
