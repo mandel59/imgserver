@@ -1,6 +1,7 @@
 import { useAtom } from "jotai";
 import React, { useEffect, useCallback, useRef } from "react";
 import Hammer from "hammerjs";
+import { FaTimes } from "react-icons/fa";
 import "./ImageModal.css";
 
 import {
@@ -18,7 +19,7 @@ export function CloseButton({ closeModal }: { closeModal: () => void }) {
       aria-label="Close modal"
       onClick={closeModal}
     >
-      ×
+      <FaTimes size={24} />
     </button>
   );
 }
