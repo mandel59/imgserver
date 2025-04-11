@@ -1,4 +1,4 @@
-#!bun
+#!/usr/bin/env bun
 import Bun from "bun";
 import app, { listen, port } from "./backend/app";
 import finder from "./frontend/finder/index.html";
