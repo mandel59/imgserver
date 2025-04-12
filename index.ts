@@ -13,9 +13,9 @@ const server = Bun.serve({
   hostname: listen,
   port,
   routes: {
-    "/": finder,
+    "/.be/*": app.fetch,
+    "/*": finder,
   },
-  fetch: app.fetch,
 });
 
 console.log(`Server is running at http://${server.hostname}:${server.port}`);

@@ -1,15 +1,16 @@
-const baseUrl = new URL(window.location.origin);
+import { backendUrl } from "./settings";
+
+const beDir = new URL(`${backendUrl}/`);
 
 export function imageResourceUrl(
   path: string,
   options: Record<string, any> = {}
 ): string {
-  const u = new URL(baseUrl);
+  const u = new URL(backendUrl);
   u.pathname = `/${path}`;
-  u.pathname = `/.be/images${u.pathname}`;
+  u.pathname = `${beDir.pathname}images${u.pathname}`;
   for (const [key, value] of Object.entries(options)) {
     u.searchParams.set(key, String(value));
   }
-  console.log(path, u.href);
   return u.href;
 }

@@ -17,16 +17,17 @@ function locationStateEquivalent(a: LocationState, b: LocationState) {
 
 function updateLocation(current: string, location: LocationState): URL {
   const url = new URL(current);
+  url.pathname = `/${location.path}`;
   url.search = "";
-  if (location.path) url.searchParams.set("path", location.path);
   if (location.image) url.searchParams.set("image", location.image);
   return url;
 }
 
 function getLocation(): LocationState {
-  const searchParams = new URL(window.location.href).searchParams;
+  const u = new URL(window.location.href);
+  const searchParams = u.searchParams;
   return {
-    path: searchParams?.get("path") ?? "",
+    path: decodeURI(u.pathname).slice(1),
     image: searchParams?.get("image") ?? "",
   };
 }
