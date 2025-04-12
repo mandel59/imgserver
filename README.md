@@ -1,58 +1,62 @@
-# egviewer - Image Viewer Application
+# imgserver - Image Server
 
 ## Overview
-A web-based image viewer application with:
-- Modal image display
-- Swipe navigation (mobile/touch devices)
-- Keyboard navigation (desktop)
-- Sortable image grid
+BunとHonoを使用した画像表示サーバーです。指定したディレクトリの画像をWebブラウザで閲覧できます。
+
+## Run
+
+```npx
+npx github:mandel59/imgserver --dir /path/to/images
+```
 
 ## Features
-- Responsive image grid display
-- Full-screen modal viewer
-- Touch gesture support (Hammer.js)
-- Accessible keyboard controls
-- Path-based navigation
+- 画像ディレクトリの指定可能
+- Reactベースの画像ビューア
+- ホットリロード対応の開発サーバー
+- シンプルなAPIエンドポイント
 
 ## Tech Stack
-- **Backend**: Bun + TypeScript + Hono (web framework)
-- **Frontend**: Vanilla JS
-- **Dependencies**:
-  - Hammer.js (for touch gestures)
-  - Custom server implementation
+- **Runtime**: Bun
+- **Backend**: Hono
+- **Frontend**: React 19
+- **State Management**: Jotai
+- **Data Fetching**: TanStack Query
 
 ## Project Structure
+
 ```
-egviewer/
-├── docs/            # Documentation
-│   ├── plans/       # Development plans
-│   └── tasks/       # Task tracking
-├── images/          # Image storage
-├── src/             # Server source
-│   └── server.ts    # Main server
-├── static/          # Frontend assets
-│   └── index.html   # Main interface
-├── bun.lock         # Dependency lock
-└── package.json     # Project config
+imgserver/
+├── backend/          # バックエンドサーバ゙ー関連
+│   └── app.ts        # Honoアプリケーション
+├── frontend/         # フロントエンド関連
+│   └── finder/       # 画像ビューア
+│       ├── api.ts    # APIクライアント
+│       ├── Finder.tsx # メインコンポーネント
+│       ├── ImageModal.tsx # 画像モーダル
+│       └── ...       # その他コンポーネント
+├── docs/             # ドキュメント
+├── images/           # 画像格納ディレクトリ
+├── index.ts          # エントリーポイント
+└── package.json      # 依存関係
 ```
 
 ## Development
+
 ### Setup
+
 ```bash
 bun install
 ```
 
-### Running
+### Run develop server
+
 ```bash
-bun run start
+bun dev
 ```
 
-### Building
-```bash
-bun run build
-```
+`bun dev` で起動した場合はデフォルトで`images/`ディレクトリの画像を表示します。
+別のディレクトリを指定するには:
 
-## Contributing
-1. Create a new task in `docs/tasks/`
-2. Update relevant documentation
-3. Submit changes via pull request
+```bash
+bun dev --dir /path/to/images
+```
