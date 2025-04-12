@@ -8,28 +8,35 @@ import { parseArgs } from "node:util";
 import sharp from "sharp";
 
 const {
-  values: { listen = "127.0.0.1", port = "8000", dir: imagesDir = "." },
+  values: { listen, port, dir: imagesDir, logging: loggingPath },
+  positionals,
 } = parseArgs({
   args: process.argv,
   options: {
     listen: {
       type: "string",
       short: "l",
+      default: "127.0.0.1",
     },
     port: {
       type: "string",
       short: "p",
+      default: "8000",
     },
     dir: {
       type: "string",
       short: "d",
+      default: ".",
+    },
+    logging: {
+      type: "string",
     },
   },
   strict: true,
   allowPositionals: true,
 });
 
-export { listen, port, imagesDir };
+export { listen, port, imagesDir, loggingPath, positionals };
 
 const imageExtensions = [
   ".jpg",
@@ -44,8 +51,10 @@ const imageExtensions = [
 
 const app = new Hono();
 
-// アクセスログミドルウェア
-app.use("/api/*", logger());
+if (loggingPath) {
+  // アクセスログミドルウェア
+  app.use(loggingPath, logger());
+}
 
 // 画像ファイル配信 (エラーハンドリング強化版)
 app.get("/images/*", etag(), async (c) => {
