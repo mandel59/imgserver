@@ -217,8 +217,8 @@ app.get("/images/*", etag(), async (c) => {
   }
 });
 
-// APIルート
-app.get("/api/images", async (c) => {
+// ファイル一覧取得API
+app.get("/.be/api/list-files", async (c) => {
   const { sort = "name", path = "" } = c.req.query();
 
   // セキュリティチェックと隠しファイルチェック

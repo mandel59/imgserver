@@ -5,7 +5,7 @@ export async function fetchFileItems(
   currentPath: string
 ): Promise<FileItem[]> {
   const response = await fetch(
-    `/api/images?sort=${sortOption}&path=${encodeURIComponent(currentPath)}`
+    `/.be/api/list-files?sort=${sortOption}&path=${encodeURIComponent(currentPath)}`
   );
   return await response.json();
 }
