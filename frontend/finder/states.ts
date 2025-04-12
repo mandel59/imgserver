@@ -86,7 +86,7 @@ export const isImageModalOpenAtom = atom(
 
 export const currentImagesAtom = atom<FileItem[]>(
   (get) =>
-    get(currentFileItemsQueryAtom).data?.files?.filter(
+    get(currentFileItemsQueryAtom).data?.files?.filter?.(
       (file) => file.isImage
     ) ?? []
 );
