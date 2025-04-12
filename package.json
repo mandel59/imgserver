@@ -9,6 +9,7 @@
   },
   "scripts": {
     "dev": "bun run --hot index.ts --dir images --logging \"/api/*\"",
+    "start": "bun index.ts --dir images",
     "test": "bun test"
   },
   "devDependencies": {
