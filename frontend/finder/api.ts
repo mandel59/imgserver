@@ -15,5 +15,5 @@ export async function fetchFileItems(
   if (!response.ok) {
     throw new Error(`Error ${response.status}: ${response.statusText}`);
   }
-  return await response.json();
+  return (await response.json())?.files ?? [];
 }

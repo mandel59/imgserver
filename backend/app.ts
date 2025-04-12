@@ -205,7 +205,6 @@ app.get("/.be/images/*", etag(), async (c) => {
       (err as any)?.code == "ENOENT" ||
       (err as any)?.message?.startsWith("Input file is missing")
     ) {
-      console.error(`File not found: ${filePath}`);
       return c.json({ error: "File not found" }, 404);
     }
     console.error(
@@ -235,27 +234,42 @@ app.get("/.be/api/list-files", async (c) => {
 
   const items: any[] = [];
 
-  // ディレクトリとファイル情報を収集 (隠しファイルは除外)
-  for (const fileName of await readdir(dirPath)) {
-    // 隠しファイル(.で始まる)と名前に`\`を含むファイルはスキップ
-    if (/^\.|\\/g.test(fileName)) {
-      continue;
+  try {
+    // ディレクトリとファイル情報を収集 (隠しファイルは除外)
+    for (const fileName of await readdir(dirPath)) {
+      // 隠しファイル(.で始まる)と名前に`\`を含むファイルはスキップ
+      if (/^\.|\\/g.test(fileName)) {
+        continue;
+      }
+
+      const ext = extname(fileName).toLowerCase();
+
+      const filePath = join(dirPath, fileName);
+      const fileInfo = await stat(filePath);
+      const isDirectory = fileInfo.isDirectory();
+      const isImage = imageExtensions.includes(ext);
+      items.push({
+        name: fileName,
+        isDirectory,
+        isImage,
+        modified: fileInfo.mtime.getTime(),
+        size: fileInfo.size,
+        path: join(path, fileName),
+      });
     }
-
-    const ext = extname(fileName).toLowerCase();
-
-    const filePath = join(dirPath, fileName);
-    const fileInfo = await stat(filePath);
-    const isDirectory = fileInfo.isDirectory();
-    const isImage = imageExtensions.includes(ext);
-    items.push({
-      name: fileName,
-      isDirectory,
-      isImage,
-      modified: fileInfo.mtime.getTime(),
-      size: fileInfo.size,
-      path: join(path, fileName),
-    });
+  } catch (err) {
+    if (
+      (err as any)?.code == "ENOENT" ||
+      (err as any)?.message?.startsWith("Input file is missing")
+    ) {
+      return c.json({ exists: false, files: [] }, 200);
+    }
+    console.error(
+      `Error processing list-files request for ${dirPath}:`,
+      err?.constructor,
+      err
+    );
+    return c.json({ error: "Internal server error" }, 500);
   }
 
   // ソート処理 (ディレクトリを先に表示)
@@ -273,7 +287,7 @@ app.get("/.be/api/list-files", async (c) => {
     }
   });
 
-  return c.json(items);
+  return c.json({ exists: true, files: items });
 });
 
 // 静的ファイル配信
