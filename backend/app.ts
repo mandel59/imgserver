@@ -57,8 +57,8 @@ if (loggingPath) {
 }
 
 // 画像ファイル配信 (エラーハンドリング強化版)
-app.get("/images/*", etag(), async (c) => {
-  const relativePath = c.req.path.replace(/^\/images\//, "");
+app.get("/.be/images/*", etag(), async (c) => {
+  const relativePath = c.req.path.replace(/^\/\.be\/images\//, "");
 
   // セキュリティチェックと隠しファイルチェック
   if (

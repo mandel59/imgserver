@@ -6,6 +6,8 @@ import {
   currentImagesAtom,
   onImageModalOpenAtom,
 } from "./states.ts";
+import { imageResourceUrl } from "./resources.ts";
+import path from "path-browserify";
 
 export function IconWithName({
   icon,
@@ -104,9 +106,7 @@ export function ImageIcon({
     }
   };
 
-  const u = new URL("http://example.com/");
-  u.pathname = file.path;
-  const encodedPath = u.pathname;
+  const url = imageResourceUrl(file.path);
 
   return (
     <IconWithName
@@ -124,8 +124,8 @@ export function ImageIcon({
     >
       <img
         loading="lazy"
-        src={`/images${encodedPath}?height=${height}&format=webp`}
-        srcSet={`/images${encodedPath}?&height=${height * 2}&format=webp 2x`}
+        src={`${url}?height=${height}&format=webp`}
+        srcSet={`${url}?&height=${height * 2}&format=webp 2x`}
         width={width}
         height={height}
         style={{
