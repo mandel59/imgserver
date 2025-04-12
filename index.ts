@@ -1,7 +1,10 @@
 #!/usr/bin/env bun
 import Bun from "bun";
-import app, { listen, port } from "./backend/app";
+import { name, version } from "./package.json";
+import app, { listen, port } from "./backend/app.ts";
 import finder from "./frontend/finder/index.html";
+
+console.log(`${name} ${version}`);
 
 Bun.serve({
   hostname: listen,
