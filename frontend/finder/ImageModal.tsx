@@ -1,11 +1,6 @@
 import { useAtom, useAtomValue, useStore } from "jotai";
-import React, {
-  useEffect,
-  useCallback,
-  useRef,
-  type ReactEventHandler,
-} from "react";
-import Hammer from "hammerjs";
+import React, { useEffect, useCallback, useRef } from "react";
+import { useSwipeable } from "react-swipeable";
 import { FaTimes } from "react-icons/fa";
 import "./ImageModal.css";
 
@@ -53,11 +48,28 @@ export default function ImageModal() {
   const [currentImages] = useAtom(currentImagesAtom);
   const dialogRef = useRef<HTMLDialogElement>(null);
 
+  // react-swipeableでスワイプ操作を設定
+  const swipeHandlers = useSwipeable({
+    onSwipedLeft: () => onShowNextImage(1),
+    onSwipedRight: () => onShowNextImage(-1),
+    trackMouse: false,
+  });
+
+  // useSwipeableのrefとdialogRefをマージ
+  const mergedRef = useCallback((node: HTMLDialogElement | null) => {
+    // dialogRefを設定
+    dialogRef.current = node;
+    // swipeHandlers.refがあれば適用
+    if (node && swipeHandlers.ref) {
+      swipeHandlers.ref(node);
+    }
+  }, []);
+
   const closeModal = useCallback(() => {
     setIsModalOpen(false);
   }, [setIsModalOpen]);
 
-  // モーダルの開閉制御とスワイプ操作
+  // モーダルの開閉制御
   useEffect(() => {
     const dialog = dialogRef.current;
     if (!dialog) return;
@@ -94,15 +106,6 @@ export default function ImageModal() {
       document.body.style.overflow = "";
     }
 
-    // ハンマーJSでスワイプ操作を設定
-    const hammer = new Hammer(dialog);
-    hammer.on("swipeleft", () => {
-      onShowNextImage(1);
-    });
-    hammer.on("swiperight", () => {
-      onShowNextImage(-1);
-    });
-
     // 左右キー操作
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
@@ -118,7 +121,6 @@ export default function ImageModal() {
     return () => {
       dialog.removeEventListener("close", handleClose);
       dialog.removeEventListener("cancel", handleCancel);
-      hammer.destroy();
       dialog.removeEventListener("keydown", handleKeyDown);
       document.body.style.overflow = "";
     };
@@ -142,7 +144,7 @@ export default function ImageModal() {
   return (
     <dialog
       aria-label="Image"
-      ref={dialogRef}
+      ref={mergedRef}
       className="dialog-modal"
       onClick={onClick}
       onClose={closeModal}
