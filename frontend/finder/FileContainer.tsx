@@ -7,6 +7,9 @@ import {
   onImageModalOpenAtom,
 } from "./states.ts";
 import { imageResourceUrl } from "./resources.ts";
+import fetchFileItemsQueryFn from "./query-functions/fetchFileItemsQueryFn.ts";
+import { useQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
 
 export function IconWithName({
   icon,
@@ -52,6 +55,94 @@ export function IconWithName({
   );
 }
 
+export function PreviewIcon({
+  file,
+  width,
+  height,
+  images,
+  onClick,
+  onKeyDown,
+}: {
+  file: FileItem;
+  width: number;
+  height: number;
+  images: FileItem[];
+  onClick?: () => void;
+  onKeyDown?: (e: React.KeyboardEvent) => void;
+}) {
+  if (images.length === 0) {
+    return (
+      <IconWithName
+        icon="📁"
+        file={file}
+        width={width}
+        height={height}
+        onClick={onClick}
+        onKeyDown={onKeyDown}
+      />
+    );
+  }
+
+  const urls = images.slice(0, 4).map((image) => imageResourceUrl(image.path));
+
+  return (
+    <IconWithName
+      icon=""
+      file={file}
+      width={width}
+      height={height}
+      onClick={onClick}
+      onKeyDown={onKeyDown}
+    >
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          width: "100%",
+          height: "100%",
+          position: "relative",
+        }}
+      >
+        {urls.slice(0, 4).map((url, index) => (
+          <div
+            key={index}
+            style={{
+              width: "50%",
+              height: "50%",
+              boxSizing: "border-box",
+              padding: "2px",
+            }}
+          >
+            <img
+              loading="lazy"
+              src={`${url}?height=${height / 2}&format=webp`}
+              srcSet={`${url}?height=${height}&format=webp 2x`}
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                borderRadius: "4px",
+              }}
+            />
+          </div>
+        ))}
+        <div
+          style={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            fontSize: `${Math.min(width, height) * 0.4}px`,
+            pointerEvents: "none",
+          }}
+        >
+          📁
+        </div>
+      </div>
+    </IconWithName>
+  );
+}
+
 export function FolderIcon({
   file,
   width,
@@ -62,6 +153,12 @@ export function FolderIcon({
   height: number;
 }) {
   const [, onNavigate] = useAtom(onNavigateAtom);
+
+  const { data } = useQuery(fetchFileItemsQueryFn("name", file.path));
+
+  const images = useMemo(() => {
+    return data?.files?.filter((file) => file.isImage)?.slice(0, 4) ?? [];
+  }, [data]);
 
   const handleClick = () => {
     onNavigate(file.path);
@@ -75,11 +172,11 @@ export function FolderIcon({
   };
 
   return (
-    <IconWithName
-      icon="📁"
+    <PreviewIcon
       file={file}
       width={width}
       height={height}
+      images={images}
       onClick={handleClick}
       onKeyDown={handleKeyDown}
     />

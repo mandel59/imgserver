@@ -5,6 +5,7 @@ import { resolve } from "path-browserify";
 
 import type { FileItem, SortOption } from "./types.ts";
 import { fetchFileItems } from "./api.ts";
+import fetchFileItemsQueryFn from "./query-functions/fetchFileItemsQueryFn.ts";
 
 interface LocationState {
   path: string;
@@ -62,13 +63,7 @@ export const selectedImageNameAtom = atom(
 export const currentFileItemsQueryAtom = atomWithQuery((get) => {
   const sortOption = get(sortOptionAtom);
   const currentPath = get(currentPathAtom);
-  return {
-    queryKey: ["files", currentPath],
-    queryFn: async (_context) => {
-      const files = await fetchFileItems(sortOption, currentPath);
-      return { path: currentPath, files };
-    },
-  };
+  return fetchFileItemsQueryFn(sortOption, currentPath);
 });
 
 export const onNavigateAtom = atom(null, (_get, set, path: string) => {

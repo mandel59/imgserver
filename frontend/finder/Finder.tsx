@@ -1,5 +1,3 @@
-import { useAtom } from "jotai";
-
 import ImageModal from "./ImageModal.tsx";
 import Controls from "./Controls.tsx";
 import Breadcrumbs from "./Breadcrumbs.tsx";
