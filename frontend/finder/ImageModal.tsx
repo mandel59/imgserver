@@ -83,7 +83,6 @@ export default function ImageModal() {
         const el = document.querySelector<HTMLElement>(
           `[data-file-name="${image.name}"]`
         );
-        console.log(el);
         el?.focus();
       }
     };
