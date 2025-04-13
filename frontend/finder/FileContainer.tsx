@@ -7,7 +7,6 @@ import {
   onImageModalOpenAtom,
 } from "./states.ts";
 import { imageResourceUrl } from "./resources.ts";
-import path from "path-browserify";
 
 export function IconWithName({
   icon,
