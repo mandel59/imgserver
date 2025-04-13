@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 import Bun from "bun";
 import { name, version } from "./package.json";
-import app, { host, port, imagesDir } from "./backend/app.ts";
+import app, { host, port, imagesDir, development } from "./backend/app.ts";
 import finder from "./frontend/finder/index.html";
 import { resolve } from "node:path";
 import os from "node:os";
@@ -56,6 +56,7 @@ const server = Bun.serve({
     "/.be/*": app.fetch,
     "/*": finder,
   },
+  development,
 });
 
 console.log(`Server is running at ${u.href}`);
