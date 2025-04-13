@@ -6,6 +6,18 @@ import { resolve } from "node:path";
 import os from "node:os";
 import { isIP } from "node:net";
 
+function maybeInContainer(host: string) {
+  return /^[0-9a-f]{12}$/.test(host);
+}
+
+function osHostname(fallback: string) {
+  const h = os.hostname();
+  if (maybeInContainer(h)) {
+    return fallback;
+  }
+  return h;
+}
+
 function serverHostname() {
   let h = host;
   let m;
@@ -15,12 +27,12 @@ function serverHostname() {
   switch (isIP(h)) {
     case 6:
       if (/^[0:]*$/.test(h)) {
-        return os.hostname();
+        return osHostname(`[${h}]`);
       }
       return `[${h}]`
     case 4:
       if (/^[0\.]*$/.test(h)) {
-        return os.hostname();
+        return osHostname(h);
       }
       return h;
     default:
