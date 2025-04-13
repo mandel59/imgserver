@@ -8,14 +8,14 @@ import { parseArgs } from "node:util";
 import sharp from "sharp";
 
 const {
-  values: { listen, port, dir: imagesDir, logging: loggingPath },
+  values: { host, port, dir: imagesDir, logging: loggingPath },
   positionals,
 } = parseArgs({
   args: process.argv,
   options: {
-    listen: {
+    host: {
       type: "string",
-      short: "l",
+      short: "h",
       default: "127.0.0.1",
     },
     port: {
@@ -36,7 +36,7 @@ const {
   allowPositionals: true,
 });
 
-export { listen, port, imagesDir, loggingPath, positionals };
+export { host, port, imagesDir, loggingPath, positionals };
 
 const imageExtensions = [
   ".jpg",
