@@ -62,7 +62,7 @@ export default function serve() {
   const u = serverUrl();
 
   const server = Bun.serve({
-    hostname: u.hostname,
+    hostname: host,
     port: port,
     routes: {
       "/.be/*": app.fetch,
