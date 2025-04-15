@@ -5,12 +5,16 @@ import {
   onNavigateAtom,
   currentImagesAtom,
   onImageModalOpenAtom,
+  updateLocation,
+  locationOfImage,
+  locationOfDir,
 } from "./states.ts";
 import { imageResourceUrl } from "./resources.ts";
 
 export function IconWithName({
   icon,
   file,
+  href,
   onClick,
   onKeyDown,
   children,
@@ -20,7 +24,8 @@ export function IconWithName({
 }: {
   icon: string;
   file: FileItem;
-  onClick?: () => void;
+  href?: string;
+  onClick?: (e: React.MouseEvent) => void;
   onKeyDown?: (e: React.KeyboardEvent) => void;
   children?: React.ReactNode;
   width: number;
@@ -33,11 +38,11 @@ export function IconWithName({
     ...style,
   } as React.CSSProperties;
   return (
-    <div
+    <a
       className="file-item"
       data-file-name={file.name}
-      role="button"
       tabIndex={0}
+      href={href}
       onClick={onClick}
       onKeyDown={onKeyDown}
       style={iconStyle}
@@ -48,7 +53,7 @@ export function IconWithName({
         )}
       </div>
       <div className="file-name">{file.name}</div>
-    </div>
+    </a>
   );
 }
 
@@ -63,12 +68,18 @@ export function FolderIcon({
 }) {
   const [, onNavigate] = useAtom(onNavigateAtom);
 
-  const handleClick = () => {
-    onNavigate(file.path);
+  const handleClick = (e: React.MouseEvent) => {
+    if (e.button === 0 && !(e.metaKey || e.altKey || e.ctrlKey || e.shiftKey)) {
+      e.preventDefault();
+      onNavigate(file.path);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" || e.key === " ") {
+    if (
+      (e.key === "Enter" || e.key === " ") &&
+      !(e.metaKey || e.altKey || e.ctrlKey || e.shiftKey)
+    ) {
       e.preventDefault();
       onNavigate(file.path);
     }
@@ -80,6 +91,7 @@ export function FolderIcon({
       file={file}
       width={width}
       height={height}
+      href={updateLocation(locationOfDir(file.path)).href}
       onClick={handleClick}
       onKeyDown={handleKeyDown}
     />
@@ -107,19 +119,32 @@ export function ImageIcon({
 
   const url = imageResourceUrl(file.path);
 
+  const handleClick = (e: React.MouseEvent) => {
+    if (e.button === 0 && !(e.metaKey || e.altKey || e.ctrlKey || e.shiftKey)) {
+      e.preventDefault();
+      openImage();
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (
+      (e.key === "Enter" || e.key === " ") &&
+      !(e.metaKey || e.altKey || e.ctrlKey || e.shiftKey)
+    ) {
+      e.preventDefault();
+      openImage();
+    }
+  };
+
   return (
     <IconWithName
       icon=""
       file={file}
       width={width}
       height={height}
-      onClick={openImage}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          openImage();
-        }
-      }}
+      href={updateLocation(locationOfImage(file.path)).href}
+      onClick={handleClick}
+      onKeyDown={handleKeyDown}
     >
       <img
         loading="lazy"

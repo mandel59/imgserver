@@ -1,6 +1,11 @@
 import { useAtom } from "jotai";
 import { useCallback } from "react";
-import { currentPathAtom, onNavigateAtom } from "./states.ts";
+import {
+  currentPathAtom,
+  locationOfDir,
+  onNavigateAtom,
+  updateLocation,
+} from "./states.ts";
 import "./Breadcrumbs.css";
 
 export default function Breadcrumbs() {
@@ -10,23 +15,36 @@ export default function Breadcrumbs() {
 
   const handleRootClick = useCallback(
     (e: React.MouseEvent) => {
-      e.preventDefault();
-      onNavigate("");
+      if (
+        e.button === 0 &&
+        !(e.metaKey || e.altKey || e.ctrlKey || e.shiftKey)
+      ) {
+        e.preventDefault();
+        onNavigate("");
+      }
     },
     [onNavigate]
   );
 
   const handlePathClick = useCallback(
     (e: React.MouseEvent, path: string) => {
-      e.preventDefault();
-      onNavigate(path);
+      if (
+        e.button === 0 &&
+        !(e.metaKey || e.altKey || e.ctrlKey || e.shiftKey)
+      ) {
+        e.preventDefault();
+        onNavigate(path);
+      }
     },
     [onNavigate]
   );
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent, path: string) => {
-      if (e.key === "Enter" || e.key === " ") {
+      if (
+        (e.key === "Enter" || e.key === " ") &&
+        !(e.metaKey || e.altKey || e.ctrlKey || e.shiftKey)
+      ) {
         e.preventDefault();
         onNavigate(path);
       }
@@ -37,7 +55,7 @@ export default function Breadcrumbs() {
   return (
     <div className="breadcrumbs-container">
       <a
-        href="?path="
+        href={updateLocation(locationOfDir("")).href}
         onClick={handleRootClick}
         onKeyDown={(e) => handleKeyDown(e, "")}
         className={`breadcrumbs-link breadcrumbs-link-home ${
@@ -58,7 +76,7 @@ export default function Breadcrumbs() {
             <span key={currentPartPath}>
               <span className="breadcrumbs-separator">{">"}</span>
               <a
-                href={`?path=${encodeURIComponent(currentPartPath)}`}
+                href={updateLocation(locationOfDir(currentPartPath)).href}
                 onClick={(e) => handlePathClick(e, currentPartPath)}
                 onKeyDown={(e) => handleKeyDown(e, currentPartPath)}
                 className={`breadcrumbs-link ${
