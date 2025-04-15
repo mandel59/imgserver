@@ -64,8 +64,8 @@ export default function ImageModal() {
   }, []);
 
   const closeModal = useCallback(() => {
-    setIsModalOpen(false);
-  }, [setIsModalOpen]);
+    dialogRef.current?.close();
+  }, [dialogRef]);
 
   // モーダルの開閉制御
   useEffect(() => {
@@ -77,19 +77,18 @@ export default function ImageModal() {
       const images = store.get(currentImagesAtom);
       const image = images.find((image) => image.path === path);
       if (image) {
-        const el = document.querySelector<HTMLElement>(
-          `[data-file-name="${image.name}"]`
-        );
-        el?.focus();
+        requestAnimationFrame(() => {
+          const el = document.querySelector<HTMLElement>(
+            `[data-file-name="${image.name}"]`
+          );
+          el?.focus();
+        });
       }
-    };
-
-    const handleCancel = (e: Event) => {
-      requestAnimationFrame(() => handleClose());
+      store.set(isImageModalOpenAtom, false);
     };
 
     dialog.addEventListener("close", handleClose);
-    dialog.addEventListener("cancel", handleCancel);
+    dialog.addEventListener("cancel", handleClose);
 
     if (isImageModalOpen) {
       if (!dialog.open) {
@@ -117,19 +116,27 @@ export default function ImageModal() {
     dialog.addEventListener("keydown", handleKeyDown);
     return () => {
       dialog.removeEventListener("close", handleClose);
-      dialog.removeEventListener("cancel", handleCancel);
+      dialog.removeEventListener("cancel", handleClose);
       dialog.removeEventListener("keydown", handleKeyDown);
       document.body.style.overflow = "";
     };
-  }, [isImageModalOpen, onShowNextImage, store]);
+  }, [
+    isImageModalOpen,
+    onShowNextImage,
+    selectedImagePathAtom,
+    currentImagesAtom,
+    isImageModalOpenAtom,
+    store,
+  ]);
 
   const onClick = useCallback(
     (e: React.MouseEvent) => {
-      if (e.target === dialogRef.current) {
-        closeModal();
+      const dialog = dialogRef.current;
+      if (e.target === dialog) {
+        dialog.close();
       }
     },
-    [closeModal]
+    [dialogRef]
   );
 
   return (
