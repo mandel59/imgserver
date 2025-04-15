@@ -6,7 +6,6 @@ import "./ImageModal.css";
 
 import {
   isImageModalOpenAtom,
-  selectedImageIndexAtom,
   currentImagesAtom,
   onShowNextImageAtom,
   selectedImagePathAtom,
@@ -74,9 +73,9 @@ export default function ImageModal() {
     if (!dialog) return;
 
     const handleClose = () => {
-      const index = store.get(selectedImageIndexAtom);
+      const path = store.get(selectedImagePathAtom);
       const images = store.get(currentImagesAtom);
-      const image = images[index ?? -1];
+      const image = images.find((image) => image.path === path);
       if (image) {
         const el = document.querySelector<HTMLElement>(
           `[data-file-name="${image.name}"]`
