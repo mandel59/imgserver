@@ -44,9 +44,7 @@ export function ImageContainer() {
 export default function ImageModal() {
   const store = useStore();
   const [isImageModalOpen, setIsModalOpen] = useAtom(isImageModalOpenAtom);
-  const [selectedImageIndex] = useAtom(selectedImageIndexAtom);
   const [, onShowNextImage] = useAtom(onShowNextImageAtom);
-  const [currentImages] = useAtom(currentImagesAtom);
   const dialogRef = useRef<HTMLDialogElement>(null);
 
   // react-swipeableでスワイプ操作を設定
@@ -124,13 +122,7 @@ export default function ImageModal() {
       dialog.removeEventListener("keydown", handleKeyDown);
       document.body.style.overflow = "";
     };
-  }, [
-    isImageModalOpen,
-    selectedImageIndex,
-    currentImages,
-    onShowNextImage,
-    store,
-  ]);
+  }, [isImageModalOpen, onShowNextImage, store]);
 
   const onClick = useCallback(
     (e: React.MouseEvent) => {
