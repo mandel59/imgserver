@@ -13,7 +13,7 @@ interface LocationState {
 }
 
 function locationStateEquivalent(a: LocationState, b: LocationState) {
-  return a.path === b.path;
+  return a.path === b.path && a.archive === b.archive;
 }
 
 export function updateLocation(location: LocationState): URL {
@@ -47,7 +47,7 @@ function getLocation(): LocationState {
   return {
     path: decodeURI(u.pathname).slice(1),
     image: searchParams?.get("image") ?? "",
-    archive: "",
+    archive: searchParams?.get("archive") ?? "",
   };
 }
 
