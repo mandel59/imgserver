@@ -6,6 +6,7 @@ import { join, extname } from "node:path/posix";
 import { readdir, stat } from "node:fs/promises";
 import { parseArgs } from "node:util";
 import sharp from "sharp";
+import type { FileItem } from "@/common/types";
 
 const {
   values: { host, port, dir: imagesDir, logging: loggingPath, development },
@@ -236,7 +237,7 @@ app.get("/.be/api/list-files", async (c) => {
 
   const dirPath = join(imagesDir, path);
 
-  const items: any[] = [];
+  const items: FileItem[] = [];
 
   try {
     // ディレクトリとファイル情報を収集 (隠しファイルは除外)
