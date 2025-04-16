@@ -249,17 +249,35 @@ app.get("/.be/api/list-files", async (c) => {
       const ext = extname(fileName).toLowerCase();
 
       const filePath = join(dirPath, fileName);
-      const fileInfo = await stat(filePath);
-      const isDirectory = fileInfo.isDirectory();
-      const isImage = imageExtensions.includes(ext);
-      items.push({
-        name: fileName,
-        isDirectory,
-        isImage,
-        modified: fileInfo.mtime.getTime(),
-        size: fileInfo.size,
-        path: join(path, fileName),
-      });
+      try {
+        const fileInfo = await stat(filePath);
+        const isDirectory = fileInfo.isDirectory();
+        const isImage = imageExtensions.includes(ext);
+        items.push({
+          name: fileName,
+          isDirectory,
+          isImage,
+          modified: fileInfo.mtime.getTime(),
+          size: fileInfo.size,
+          path: join(path, fileName),
+        });
+      } catch (err) {
+        if (
+          (err as any)?.code == "ENOENT" ||
+          (err as any)?.message?.startsWith("Input file is missing")
+        ) {
+          items.push({
+            name: fileName,
+            isDirectory: false,
+            isImage: false,
+            modified: 0,
+            size: 0,
+            path: join(path, fileName),
+          });
+          continue;
+        }
+        throw err;
+      }
     }
   } catch (err) {
     if (
