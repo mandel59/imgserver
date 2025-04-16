@@ -14,21 +14,8 @@ export default function Breadcrumbs() {
   const archive = useAtomValue(currentArchiveAtom);
   const onNavigate = useSetAtom(onNavigateAtom);
 
-  const handleRootClick = useCallback(
-    (e: React.MouseEvent) => {
-      if (
-        e.button === 0 &&
-        !(e.metaKey || e.altKey || e.ctrlKey || e.shiftKey)
-      ) {
-        e.preventDefault();
-        onNavigate(locationOfDir("", ""));
-      }
-    },
-    [onNavigate]
-  );
-
   const handlePathClick = useCallback(
-    (e: React.MouseEvent, path: string) => {
+    (e: React.MouseEvent, path: string, archive: string) => {
       if (
         e.button === 0 &&
         !(e.metaKey || e.altKey || e.ctrlKey || e.shiftKey)
@@ -41,7 +28,7 @@ export default function Breadcrumbs() {
   );
 
   const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent, path: string) => {
+    (e: React.KeyboardEvent, path: string, archive: string) => {
       if (
         (e.key === "Enter" || e.key === " ") &&
         !(e.metaKey || e.altKey || e.ctrlKey || e.shiftKey)
@@ -57,8 +44,8 @@ export default function Breadcrumbs() {
     <div className="breadcrumbs-container">
       <a
         href={updateLocation(locationOfDir("", "")).href}
-        onClick={handleRootClick}
-        onKeyDown={(e) => handleKeyDown(e, "")}
+        onClick={(e) => handlePathClick(e, "", "")}
+        onKeyDown={(e) => handleKeyDown(e, "", "")}
         className={`breadcrumbs-link breadcrumbs-link-home ${
           path === "" ? "breadcrumbs-link-current" : ""
         }`}
@@ -73,20 +60,24 @@ export default function Breadcrumbs() {
             .split("/")
             .slice(0, i + 1)
             .join("/");
+          const currentPartArchive = currentPartPath.startsWith(archive)
+            ? archive
+            : "";
           return (
             <span key={currentPartPath}>
               <span className="breadcrumbs-separator">{">"}</span>
               <a
                 href={
                   updateLocation(
-                    locationOfDir(
-                      currentPartPath,
-                      currentPartPath.startsWith(archive) ? archive : ""
-                    )
+                    locationOfDir(currentPartPath, currentPartArchive)
                   ).href
                 }
-                onClick={(e) => handlePathClick(e, currentPartPath)}
-                onKeyDown={(e) => handleKeyDown(e, currentPartPath)}
+                onClick={(e) =>
+                  handlePathClick(e, currentPartPath, currentPartArchive)
+                }
+                onKeyDown={(e) =>
+                  handleKeyDown(e, currentPartPath, currentPartArchive)
+                }
                 className={`breadcrumbs-link ${
                   currentPartPath === path ? "breadcrumbs-link-current" : ""
                 }`}
