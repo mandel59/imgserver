@@ -2,10 +2,12 @@ import { Hono } from "hono";
 import { logger } from "hono/logger";
 import { etag } from "hono/etag";
 import { stream } from "hono/streaming";
-import { join, extname } from "node:path/posix";
+import { join, extname, basename, dirname } from "node:path/posix";
 import { readdir, stat } from "node:fs/promises";
 import { parseArgs } from "node:util";
 import sharp from "sharp";
+import AdbZip from "adm-zip";
+import iconv from "iconv-lite";
 import type { FileItem } from "@/common/types";
 
 const {
@@ -54,6 +56,10 @@ const imageExtensions = [
   ".tiff",
 ];
 
+const archiveExtensions = [
+  ".zip",
+];
+
 const app = new Hono();
 
 if (loggingPath) {
@@ -63,27 +69,69 @@ if (loggingPath) {
 
 // 画像ファイル配信 (エラーハンドリング強化版)
 app.get("/.be/images/*", etag(), async (c) => {
-  const relativePath = c.req.path.replace(/^\/\.be\/images\//, "");
+  const { archive = "", encoding = "shift_jis" } = c.req.query();
+
+  const path = c.req.path.replace(/^\/\.be\/images\//, "");
 
   // セキュリティチェックと隠しファイルチェック
   if (
-    relativePath.includes("\0") ||
-    relativePath.includes("\\") ||
-    relativePath.split("/").some((part: string) => part.startsWith("."))
+    path.includes("\0") ||
+    path.includes("\\") ||
+    path.split("/").some((part: string) => part.startsWith(".") || part.length === 0)
   ) {
-    console.error(`Invalid path attempt: ${relativePath}`);
+    console.error(`Invalid path attempt: ${path}`);
     return c.json({ error: "File not found" }, 404);
   }
 
-  const filePath = join(imagesDir, relativePath);
+  let buffer: Buffer | null = null;
+  let header: AdbZip.EntryHeader | null = null;
+  let mtime: number = 0;
+  let fileSize: number = 0;
+  if (archive) {
+    if (!path.startsWith(archive)) {
+      console.error(`Invalid path attempt: ${path}`);
+      return c.json({ error: "File not found" }, 404);
+    }
+
+    let key: string
+    if (path === archive) {
+      key = '';
+    } else {
+      if (path[archive.length] !== '/') {
+        console.error(`Invalid path attempt: ${path}`);
+        return c.json({ error: "File not found" }, 404);
+      }
+      key = path.slice(archive.length + 1);
+    }
+
+    const archivePath = join(imagesDir, archive);
+
+    const zip = new AdbZip(archivePath);
+
+    const rawKey = iconv.encode(key, encoding).toString("utf-8");
+
+    header = zip.getEntry(rawKey)?.header ?? null;
+    buffer = zip.readFile(rawKey) ?? null;
+    console.log(key, rawKey, header, buffer);
+    if (!header || !buffer) {
+      return c.json({ error: "File not found" }, 404);
+    }
+    mtime = header?.time?.getTime() ?? 0;
+  }
+
+  const filePath = join(imagesDir, path);
 
   try {
-    const fileInfo = await stat(filePath);
+    if (!archive) {
+      const fileInfo = await stat(filePath);
 
-    // 通常ファイルでない場合は404エラー
-    if (!fileInfo.isFile) {
-      console.error(`Not a regular file: ${filePath}`);
-      return c.json({ error: "File not found" }, 404);
+      // 通常ファイルでない場合は404エラー
+      if (!fileInfo.isFile) {
+        console.error(`Not a regular file: ${filePath}`);
+        return c.json({ error: "File not found" }, 404);
+      }
+      mtime = fileInfo.mtime.getTime();
+      fileSize = fileInfo.size;
     }
 
     // クエリパラメータからリサイズ設定を取得
@@ -118,13 +166,11 @@ app.get("/.be/images/*", etag(), async (c) => {
     }
 
     // sharpを使ってメタデータを除去し、必要に応じてリサイズ
-    const image = sharp(filePath);
+    const image = buffer ? sharp(buffer, {}) : sharp(filePath);
     const metadata = await image.metadata();
     const originalFormat = metadata.format;
 
     // ETag生成 (リサイズパラメータがある場合は含める)
-    const mtime = fileInfo.mtime?.getTime();
-    const fileSize = fileInfo.size;
     let etagValue = `"${mtime.toString(16)}-${fileSize.toString(16)}"`;
 
     if (width || height || fit || format) {
@@ -223,16 +269,77 @@ app.get("/.be/images/*", etag(), async (c) => {
 
 // ファイル一覧取得API
 app.get("/.be/api/list-files", async (c) => {
-  const { sort = "name", path = "" } = c.req.query();
+  const { sort = "name", path = "", archive = "", encoding = "shift_jis" } = c.req.query();
 
   // セキュリティチェックと隠しファイルチェック
   if (
     path.includes("\0") ||
     path.includes("\\") ||
-    path.split("/").some((part: string) => part.startsWith("."))
+    (path !== "" && path.split("/").some((part: string) => part.startsWith(".") || part.length === 0))
   ) {
     console.error(`Invalid path attempt: ${path}`);
-    return c.json({ error: "File not found" }, 404);
+    return c.json({ exists: false, files: [] });
+  }
+
+  if (archive) {
+    if (!path.startsWith(archive)) {
+      console.error(`Invalid path attempt: ${path}`);
+      return c.json({ exists: false, files: [] });
+    }
+
+    let key: string
+    if (path === archive) {
+      key = '';
+    } else {
+      if (path[archive.length] !== '/') {
+        console.error(`Invalid path attempt: ${path}`);
+        return c.json({ exists: false, files: [] });
+      }
+      key = path.slice(archive.length + 1);
+    }
+
+    const archivePath = join(imagesDir, archive);
+
+    const items: FileItem[] = [];
+
+    const zip = new AdbZip(archivePath);
+    for (const entry of zip.getEntries()) {
+      const entryName = iconv.decode(entry.rawEntryName, encoding);
+      const dir = dirname(entryName);
+      if (key === "" && dir !== ".") continue;
+      if (key !== "" && key !== dir) continue;
+      const file = basename(entryName);
+      const isDirectory = entryName.endsWith("/");
+      const ext = extname(file);
+      const isImage = imageExtensions.includes(ext);
+      const isArchive = false;
+      items.push({
+        name: file,
+        isDirectory,
+        isImage,
+        isArchive,
+        modified: entry.header.time.getTime(),
+        size: entry.header.size,
+        path: join(archive, dir, file),
+      });
+    }
+
+    // ソート処理 (ディレクトリを先に表示)
+    items.sort((a, b) => {
+      if (a.isDirectory !== b.isDirectory) {
+        return a.isDirectory ? -1 : 1;
+      }
+      switch (sort) {
+        case "date":
+          return b.modified - a.modified;
+        case "size":
+          return b.size - a.size;
+        default: // name
+          return a.name.localeCompare(b.name);
+      }
+    });
+
+    return c.json({ exists: true, files: items });
   }
 
   const dirPath = join(imagesDir, path);
@@ -254,10 +361,12 @@ app.get("/.be/api/list-files", async (c) => {
         const fileInfo = await stat(filePath);
         const isDirectory = fileInfo.isDirectory();
         const isImage = imageExtensions.includes(ext);
+        const isArchive = archiveExtensions.includes(ext);
         items.push({
           name: fileName,
           isDirectory,
           isImage,
+          isArchive,
           modified: fileInfo.mtime.getTime(),
           size: fileInfo.size,
           path: join(path, fileName),
@@ -271,6 +380,7 @@ app.get("/.be/api/list-files", async (c) => {
             name: fileName,
             isDirectory: false,
             isImage: false,
+            isArchive: false,
             modified: 0,
             size: 0,
             path: join(path, fileName),
