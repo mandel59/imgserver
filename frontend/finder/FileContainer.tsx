@@ -166,12 +166,18 @@ export function FileIcon({
 }
 
 export default function FileContainer() {
-  const [{ data }] = useAtom(currentFileItemsQueryAtom);
+  const [{ data, isLoading }] = useAtom(currentFileItemsQueryAtom);
 
   const files: FileItem[] = data?.files ?? [];
 
   return (
     <div id="file-container">
+      {isLoading ? (
+        <div className="loading-overlay">
+          <div className="loading-spinner"></div>
+          <div className="loading-text">Loading...</div>
+        </div>
+      ) : null}
       {files.map((file, i) => (
         <FileIcon key={i} file={file} />
       ))}
