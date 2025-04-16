@@ -86,6 +86,7 @@ body {
 }
 
 .file-item {
+  all: unset;
   background: var(--card-bg);
   border-radius: 8px;
   overflow: hidden;

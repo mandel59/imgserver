@@ -1,26 +1,39 @@
 import { atom } from "jotai";
 import { atomWithLocation } from "jotai-location";
 import { atomWithQuery } from "jotai-tanstack-query";
-import { resolve } from "path-browserify";
+import { resolve, dirname, basename } from "path-browserify";
 
 import type { FileItem, SortOption } from "./types.ts";
 import { fetchFileItems } from "./api.ts";
 
 interface LocationState {
   path: string;
-  image: string;
+  image?: string;
 }
 
 function locationStateEquivalent(a: LocationState, b: LocationState) {
   return a.path === b.path;
 }
 
-function updateLocation(current: string, location: LocationState): URL {
-  const url = new URL(current);
-  url.pathname = `/${location.path}`;
+export function updateLocation(location: LocationState): URL {
+  const url = new URL(window.location.href);
+  url.pathname = resolve("/", location.path);
   url.search = "";
   if (location.image) url.searchParams.set("image", location.image);
   return url;
+}
+
+export function locationOfDir(path: string): LocationState {
+  return {
+    path,
+  }
+}
+
+export function locationOfImage(path: string): LocationState {
+  return {
+    path: dirname(path),
+    image: basename(path),
+  }
 }
 
 function getLocation(): LocationState {
@@ -35,7 +48,7 @@ function getLocation(): LocationState {
 function applyLocation(location: LocationState) {
   const currentLocation = getLocation();
   const replace = locationStateEquivalent(currentLocation, location);
-  const url = updateLocation(window.location.href, location);
+  const url = updateLocation(location);
   if (replace) {
     window.history.replaceState(window.history.state, "", url);
   } else {

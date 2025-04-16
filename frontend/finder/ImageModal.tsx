@@ -6,7 +6,6 @@ import "./ImageModal.css";
 
 import {
   isImageModalOpenAtom,
-  selectedImageIndexAtom,
   currentImagesAtom,
   onShowNextImageAtom,
   selectedImagePathAtom,
@@ -44,9 +43,7 @@ export function ImageContainer() {
 export default function ImageModal() {
   const store = useStore();
   const [isImageModalOpen, setIsModalOpen] = useAtom(isImageModalOpenAtom);
-  const [selectedImageIndex] = useAtom(selectedImageIndexAtom);
   const [, onShowNextImage] = useAtom(onShowNextImageAtom);
-  const [currentImages] = useAtom(currentImagesAtom);
   const dialogRef = useRef<HTMLDialogElement>(null);
 
   // react-swipeableでスワイプ操作を設定
@@ -67,8 +64,8 @@ export default function ImageModal() {
   }, []);
 
   const closeModal = useCallback(() => {
-    setIsModalOpen(false);
-  }, [setIsModalOpen]);
+    dialogRef.current?.close();
+  }, [dialogRef]);
 
   // モーダルの開閉制御
   useEffect(() => {
@@ -76,23 +73,22 @@ export default function ImageModal() {
     if (!dialog) return;
 
     const handleClose = () => {
-      const index = store.get(selectedImageIndexAtom);
+      const path = store.get(selectedImagePathAtom);
       const images = store.get(currentImagesAtom);
-      const image = images[index ?? -1];
+      const image = images.find((image) => image.path === path);
       if (image) {
-        const el = document.querySelector<HTMLElement>(
-          `[data-file-name="${image.name}"]`
-        );
-        el?.focus();
+        requestAnimationFrame(() => {
+          const el = document.querySelector<HTMLElement>(
+            `[data-file-name="${image.name}"]`
+          );
+          el?.focus();
+        });
       }
-    };
-
-    const handleCancel = (e: Event) => {
-      requestAnimationFrame(() => handleClose());
+      store.set(isImageModalOpenAtom, false);
     };
 
     dialog.addEventListener("close", handleClose);
-    dialog.addEventListener("cancel", handleCancel);
+    dialog.addEventListener("cancel", handleClose);
 
     if (isImageModalOpen) {
       if (!dialog.open) {
@@ -120,25 +116,27 @@ export default function ImageModal() {
     dialog.addEventListener("keydown", handleKeyDown);
     return () => {
       dialog.removeEventListener("close", handleClose);
-      dialog.removeEventListener("cancel", handleCancel);
+      dialog.removeEventListener("cancel", handleClose);
       dialog.removeEventListener("keydown", handleKeyDown);
       document.body.style.overflow = "";
     };
   }, [
     isImageModalOpen,
-    selectedImageIndex,
-    currentImages,
     onShowNextImage,
+    selectedImagePathAtom,
+    currentImagesAtom,
+    isImageModalOpenAtom,
     store,
   ]);
 
   const onClick = useCallback(
     (e: React.MouseEvent) => {
-      if (e.target === dialogRef.current) {
-        closeModal();
+      const dialog = dialogRef.current;
+      if (e.target === dialog) {
+        dialog.close();
       }
     },
-    [closeModal]
+    [dialogRef]
   );
 
   return (
