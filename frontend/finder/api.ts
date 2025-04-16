@@ -1,5 +1,5 @@
 import { backendUrl } from "./settings";
-import type { FileItem, SortOption } from "./types";
+import type { FileItem, SortOption } from "@/common/types.ts";
 
 const beDir = new URL(`${backendUrl}/`);
 

@@ -3,7 +3,7 @@ import { atomWithLocation } from "jotai-location";
 import { atomWithQuery } from "jotai-tanstack-query";
 import { resolve, dirname, basename } from "path-browserify";
 
-import type { FileItem, SortOption } from "./types.ts";
+import type { FileItem, SortOption } from "@/common/types.ts";
 import { fetchFileItems } from "./api.ts";
 
 interface LocationState {

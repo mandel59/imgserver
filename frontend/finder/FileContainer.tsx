@@ -1,5 +1,5 @@
 import { useAtom } from "jotai";
-import type { FileItem } from "./types.ts";
+import type { FileItem } from "@/common/types.ts";
 import {
   currentFileItemsQueryAtom,
   onNavigateAtom,

@@ -1,6 +1,6 @@
 import { useAtom } from "jotai";
-import { sortOptionAtom } from "./states";
-import type { SortOption } from "./types";
+import { sortOptionAtom } from "./states.ts";
+import type { SortOption } from "@/common/types.ts";
 
 export default function Controls() {
   const [sortOption, setSortOption] = useAtom(sortOptionAtom);
