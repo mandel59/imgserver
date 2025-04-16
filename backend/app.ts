@@ -112,7 +112,6 @@ app.get("/.be/images/*", etag(), async (c) => {
 
     header = zip.getEntry(rawKey)?.header ?? null;
     buffer = zip.readFile(rawKey) ?? null;
-    console.log(key, rawKey, header, buffer);
     if (!header || !buffer) {
       return c.json({ error: "File not found" }, 404);
     }
@@ -321,6 +320,7 @@ app.get("/.be/api/list-files", async (c) => {
         modified: entry.header.time.getTime(),
         size: entry.header.size,
         path: join(archive, dir, file),
+        archive,
       });
     }
 
@@ -356,12 +356,13 @@ app.get("/.be/api/list-files", async (c) => {
 
       const ext = extname(fileName).toLowerCase();
 
-      const filePath = join(dirPath, fileName);
+      const fsFilePath = join(dirPath, fileName);
       try {
-        const fileInfo = await stat(filePath);
+        const fileInfo = await stat(fsFilePath);
         const isDirectory = fileInfo.isDirectory();
         const isImage = imageExtensions.includes(ext);
         const isArchive = archiveExtensions.includes(ext);
+        const filePath = join(path, fileName);
         items.push({
           name: fileName,
           isDirectory,
@@ -369,7 +370,8 @@ app.get("/.be/api/list-files", async (c) => {
           isArchive,
           modified: fileInfo.mtime.getTime(),
           size: fileInfo.size,
-          path: join(path, fileName),
+          path: filePath,
+          archive: isArchive ? filePath : archive,
         });
       } catch (err) {
         if (
@@ -384,6 +386,7 @@ app.get("/.be/api/list-files", async (c) => {
             modified: 0,
             size: 0,
             path: join(path, fileName),
+            archive,
           });
           continue;
         }

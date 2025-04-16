@@ -1,4 +1,4 @@
-import { useAtom, useStore } from "jotai";
+import { useAtom, useAtomValue, useStore } from "jotai";
 import React, { useEffect, useCallback, useRef } from "react";
 import { useSwipeable } from "react-swipeable";
 import { FaTimes } from "react-icons/fa";
@@ -9,6 +9,7 @@ import {
   currentImagesAtom,
   onShowNextImageAtom,
   selectedImagePathAtom,
+  currentArchiveAtom,
 } from "./states.ts";
 import { imageResourceUrl } from "./resources.ts";
 
@@ -26,12 +27,13 @@ export function CloseButton({ closeModal }: { closeModal: () => void }) {
 
 export function ImageContainer() {
   const [selectedImagePath] = useAtom(selectedImagePathAtom);
+  const archive = useAtomValue(currentArchiveAtom);
 
   if (!selectedImagePath) {
     return null;
   }
 
-  const src = imageResourceUrl(selectedImagePath);
+  const src = imageResourceUrl(selectedImagePath, { archive });
 
   return (
     <div className="image-container">

@@ -1,6 +1,7 @@
-import { useAtom } from "jotai";
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { useCallback } from "react";
 import {
+  currentArchiveAtom,
   currentPathAtom,
   locationOfDir,
   onNavigateAtom,
@@ -9,9 +10,9 @@ import {
 import "./Breadcrumbs.css";
 
 export default function Breadcrumbs() {
-  const [currentPath] = useAtom(currentPathAtom);
-
-  const [, onNavigate] = useAtom(onNavigateAtom);
+  const path = useAtomValue(currentPathAtom);
+  const archive = useAtomValue(currentArchiveAtom);
+  const onNavigate = useSetAtom(onNavigateAtom);
 
   const handleRootClick = useCallback(
     (e: React.MouseEvent) => {
@@ -20,7 +21,7 @@ export default function Breadcrumbs() {
         !(e.metaKey || e.altKey || e.ctrlKey || e.shiftKey)
       ) {
         e.preventDefault();
-        onNavigate("");
+        onNavigate(locationOfDir("", ""));
       }
     },
     [onNavigate]
@@ -33,10 +34,10 @@ export default function Breadcrumbs() {
         !(e.metaKey || e.altKey || e.ctrlKey || e.shiftKey)
       ) {
         e.preventDefault();
-        onNavigate(path);
+        onNavigate(locationOfDir(path, archive));
       }
     },
-    [onNavigate]
+    [onNavigate, path, archive]
   );
 
   const handleKeyDown = useCallback(
@@ -46,29 +47,29 @@ export default function Breadcrumbs() {
         !(e.metaKey || e.altKey || e.ctrlKey || e.shiftKey)
       ) {
         e.preventDefault();
-        onNavigate(path);
+        onNavigate(locationOfDir(path, archive));
       }
     },
-    [onNavigate]
+    [onNavigate, path, archive]
   );
 
   return (
     <div className="breadcrumbs-container">
       <a
-        href={updateLocation(locationOfDir("")).href}
+        href={updateLocation(locationOfDir("", "")).href}
         onClick={handleRootClick}
         onKeyDown={(e) => handleKeyDown(e, "")}
         className={`breadcrumbs-link breadcrumbs-link-home ${
-          currentPath === "" ? "breadcrumbs-link-current" : ""
+          path === "" ? "breadcrumbs-link-current" : ""
         }`}
         tabIndex={0}
       >
         Home
       </a>
 
-      {currentPath &&
-        currentPath.split("/").map((part, i) => {
-          const currentPartPath = currentPath
+      {path &&
+        path.split("/").map((part, i) => {
+          const currentPartPath = path
             .split("/")
             .slice(0, i + 1)
             .join("/");
@@ -76,13 +77,18 @@ export default function Breadcrumbs() {
             <span key={currentPartPath}>
               <span className="breadcrumbs-separator">{">"}</span>
               <a
-                href={updateLocation(locationOfDir(currentPartPath)).href}
+                href={
+                  updateLocation(
+                    locationOfDir(
+                      currentPartPath,
+                      currentPartPath.startsWith(archive) ? archive : ""
+                    )
+                  ).href
+                }
                 onClick={(e) => handlePathClick(e, currentPartPath)}
                 onKeyDown={(e) => handleKeyDown(e, currentPartPath)}
                 className={`breadcrumbs-link ${
-                  currentPartPath === currentPath
-                    ? "breadcrumbs-link-current"
-                    : ""
+                  currentPartPath === path ? "breadcrumbs-link-current" : ""
                 }`}
                 tabIndex={0}
               >

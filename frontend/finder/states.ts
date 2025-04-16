@@ -8,7 +8,8 @@ import { fetchFileItems } from "./api.ts";
 
 interface LocationState {
   path: string;
-  image?: string;
+  image: string;
+  archive: string;
 }
 
 function locationStateEquivalent(a: LocationState, b: LocationState) {
@@ -20,19 +21,23 @@ export function updateLocation(location: LocationState): URL {
   url.pathname = resolve("/", location.path);
   url.search = "";
   if (location.image) url.searchParams.set("image", location.image);
+  if (location.archive) url.searchParams.set("archive", location.archive);
   return url;
 }
 
-export function locationOfDir(path: string): LocationState {
+export function locationOfDir(path: string, archive: string): LocationState {
   return {
     path,
+    image: "",
+    archive,
   }
 }
 
-export function locationOfImage(path: string): LocationState {
+export function locationOfImage(path: string, archive: string): LocationState {
   return {
     path: dirname(path),
     image: basename(path),
+    archive,
   }
 }
 
@@ -42,6 +47,7 @@ function getLocation(): LocationState {
   return {
     path: decodeURI(u.pathname).slice(1),
     image: searchParams?.get("image") ?? "",
+    archive: "",
   };
 }
 
@@ -65,6 +71,13 @@ export const currentPathAtom = atom(
   }
 );
 
+export const currentArchiveAtom = atom(
+  (get) => get(locationAtom).archive,
+  (get, set, archive: string) => {
+    set(locationAtom, { ...get(locationAtom), archive });
+  }
+)
+
 export const selectedImageNameAtom = atom(
   (get) => get(locationAtom).image,
   (get, set, image: string) => {
@@ -75,17 +88,18 @@ export const selectedImageNameAtom = atom(
 export const currentFileItemsQueryAtom = atomWithQuery((get) => {
   const sortOption = get(sortOptionAtom);
   const currentPath = get(currentPathAtom);
+  const archive = get(currentArchiveAtom);
   return {
     queryKey: ["files", currentPath],
     queryFn: async (_context) => {
-      const files = await fetchFileItems(sortOption, currentPath);
+      const files = await fetchFileItems(sortOption, currentPath, archive);
       return { path: currentPath, files };
     },
   };
 });
 
-export const onNavigateAtom = atom(null, (_get, set, path: string) => {
-  set(currentPathAtom, resolve("/", path).slice(1));
+export const onNavigateAtom = atom(null, (_get, set, location: LocationState) => {
+  set(locationAtom, location);
 });
 
 export const isImageModalOpenAtom = atom(

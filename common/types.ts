@@ -7,4 +7,5 @@ export type FileItem = {
   modified: number;
   size: number;
   path: string;
+  archive: string;
 };

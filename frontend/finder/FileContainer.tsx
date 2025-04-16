@@ -71,7 +71,7 @@ export function FolderIcon({
   const handleClick = (e: React.MouseEvent) => {
     if (e.button === 0 && !(e.metaKey || e.altKey || e.ctrlKey || e.shiftKey)) {
       e.preventDefault();
-      onNavigate(file.path);
+      onNavigate(locationOfDir(file.path, file.archive));
     }
   };
 
@@ -81,7 +81,7 @@ export function FolderIcon({
       !(e.metaKey || e.altKey || e.ctrlKey || e.shiftKey)
     ) {
       e.preventDefault();
-      onNavigate(file.path);
+      onNavigate(locationOfDir(file.path, file.archive));
     }
   };
 
@@ -91,7 +91,7 @@ export function FolderIcon({
       file={file}
       width={width}
       height={height}
-      href={updateLocation(locationOfDir(file.path)).href}
+      href={updateLocation(locationOfDir(file.path, file.archive)).href}
       onClick={handleClick}
       onKeyDown={handleKeyDown}
     />
@@ -142,14 +142,14 @@ export function ImageIcon({
       file={file}
       width={width}
       height={height}
-      href={updateLocation(locationOfImage(file.path)).href}
+      href={updateLocation(locationOfImage(file.path, file.archive)).href}
       onClick={handleClick}
       onKeyDown={handleKeyDown}
     >
       <img
         loading="lazy"
-        src={`${url}?height=${height}&format=webp`}
-        srcSet={`${url}?&height=${height * 2}&format=webp 2x`}
+        src={`${url}?archive=${file.archive}&height=${height}&format=webp`}
+        srcSet={`${url}?archive=${file.archive}&height=${height * 2}&format=webp 2x`}
         width={width}
         height={height}
         style={{
@@ -183,7 +183,7 @@ export function FileIcon({
   width?: number;
   height?: number;
 }) {
-  if (file.isDirectory)
+  if (file.isDirectory || file.isArchive)
     return <FolderIcon file={file} width={width} height={height} />;
   if (file.isImage)
     return <ImageIcon file={file} width={width} height={height} />;
