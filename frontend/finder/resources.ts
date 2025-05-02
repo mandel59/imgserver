@@ -10,7 +10,10 @@ export function imageResourceUrl(
   u.pathname = `/${path}`;
   u.pathname = `${beDir.pathname}images${u.pathname}`;
   for (const [key, value] of Object.entries(options)) {
-    u.searchParams.set(key, String(value));
+    if (value == null) { continue; }
+    const s = String(value);
+    if (s === "") { continue; }
+    u.searchParams.set(key, s);
   }
   return u.href;
 }
