@@ -11,7 +11,14 @@ import iconv from "iconv-lite";
 import type { FileItem } from "@/common/types";
 
 const {
-  values: { host, port, dir: imagesDir, logging: loggingPath, development },
+  values: {
+    host,
+    port,
+    dir: imagesDir,
+    logging: loggingPath,
+    development,
+    keepMetadata,
+  },
   positionals,
 } = parseArgs({
   args: process.argv,
@@ -37,13 +44,25 @@ const {
     development: {
       type: "boolean",
       default: false,
+    },
+    keepMetadata: {
+      "type": "boolean",
+      default: false,
     }
   },
   strict: true,
   allowPositionals: true,
 });
 
-export { host, port, imagesDir, loggingPath, development, positionals };
+export {
+  host,
+  port,
+  imagesDir,
+  loggingPath,
+  development,
+  positionals,
+  keepMetadata,
+};
 
 const imageExtensions = [
   ".jpg",
@@ -169,8 +188,16 @@ app.get("/.be/images/*", etag(), async (c) => {
     const metadata = await image.metadata();
     const originalFormat = metadata.format;
 
+    if (keepMetadata) {
+      image.keepMetadata()
+    }
+
     // ETag生成 (リサイズパラメータがある場合は含める)
     let etagValue = `"${mtime.toString(16)}-${fileSize.toString(16)}"`;
+
+    if (keepMetadata) {
+      etagValue += "-km"
+    }
 
     if (width || height || fit || format) {
       const paramsHash = Buffer.from(
