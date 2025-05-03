@@ -150,8 +150,6 @@ export function ImageIcon({
         loading="lazy"
         src={`${url}?archive=${file.archive}&height=${height}&format=webp`}
         srcSet={`${url}?archive=${file.archive}&height=${height * 2}&format=webp 2x`}
-        width={width}
-        height={height}
         style={{
           width: `100%`,
           height: `100%`,
