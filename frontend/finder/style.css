@@ -1,3 +1,5 @@
+@import url("./keyframes.css");
+
 :root {
   --text-color: #333;
   --bg-color: #f8f9fa;
@@ -190,15 +192,14 @@ button:focus-visible,
   align-items: center;
   justify-content: center;
   padding: 0;
-}
 
-.refresh-button svg {
-  width: 16px;
-  height: 16px;
-}
-
-.refresh-button .spin {
-  animation: spin 1s linear infinite;
+  & svg {
+    width: 16px;
+    height: 16px;
+  }
+  & .spin {
+    animation: spin 1s linear infinite;
+  }
 }
 
 .loading-overlay {
@@ -213,8 +214,11 @@ button:focus-visible,
   align-items: center;
   justify-content: center;
   z-index: 99;
-  opacity: 0;
-  animation: fadeIn 0.3s ease-in 0.3s forwards;
+  @starting-style {
+    opacity: 0;
+  }
+  opacity: 1;
+  transition: opacity 0.3s ease-in 0.3s;
 }
 
 .loading-spinner {
@@ -230,19 +234,4 @@ button:focus-visible,
   color: white;
   margin-top: 16px;
   font-size: 1.2rem;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
 }
