@@ -183,6 +183,24 @@ button:focus-visible,
   outline-offset: 2px;
 }
 
+.refresh-button {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.refresh-button svg {
+  width: 16px;
+  height: 16px;
+}
+
+.refresh-button .spin {
+  animation: spin 1s linear infinite;
+}
+
 .loading-overlay {
   position: fixed;
   top: 0;
