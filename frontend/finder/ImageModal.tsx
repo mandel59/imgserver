@@ -45,11 +45,7 @@ export function ImageWithIndicator(
           <div className="spinner"></div>
         </div>
       )}
-      <img
-        {...props}
-        onLoad={handleImageLoad}
-        onError={handleImageError}
-      />
+      <img {...props} onLoad={handleImageLoad} onError={handleImageError} />
     </>
   );
 }
@@ -57,16 +53,52 @@ export function ImageWithIndicator(
 export function ImageContainer() {
   const [selectedImagePath] = useAtom(selectedImagePathAtom);
   const archive = useAtomValue(currentArchiveAtom);
+  const [prevSrc, setPrevSrc] = useState<string | null>(null);
+  const [currentSrc, setCurrentSrc] = useState<string | null>(null);
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
-  if (!selectedImagePath) {
+  useEffect(() => {
+    if (!selectedImagePath) {
+      setCurrentSrc(null);
+      return;
+    }
+
+    const newSrc = imageResourceUrl(selectedImagePath, { archive });
+    if (newSrc !== currentSrc) {
+      setPrevSrc(currentSrc);
+      setCurrentSrc(newSrc);
+      setIsTransitioning(true);
+    }
+  }, [selectedImagePath, archive]);
+
+  useEffect(() => {
+    if (!isTransitioning) return;
+
+    const timer = setTimeout(() => {
+      setPrevSrc(null);
+      setIsTransitioning(false);
+    }, 120); // CSSのトランジション時間と合わせる
+
+    return () => clearTimeout(timer);
+  }, [isTransitioning]);
+
+  if (!currentSrc) {
     return null;
   }
 
-  const src = imageResourceUrl(selectedImagePath, { archive });
-
   return (
-    <div className="image-container">
-      <ImageWithIndicator key={src} src={src} />
+    <div>
+      {prevSrc && (
+        <div key={prevSrc} className="image-container fade-out">
+          <ImageWithIndicator src={prevSrc} />
+        </div>
+      )}
+      <div
+        key={currentSrc}
+        className={prevSrc ? "image-container fade-in" : "image-container"}
+      >
+        <ImageWithIndicator src={currentSrc} />
+      </div>
     </div>
   );
 }
