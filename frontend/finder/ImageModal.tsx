@@ -1,5 +1,5 @@
 import { useAtom, useAtomValue, useStore } from "jotai";
-import React, { useEffect, useCallback, useRef } from "react";
+import React, { useEffect, useCallback, useRef, useState } from "react";
 import { useSwipeable } from "react-swipeable";
 import { FaTimes } from "react-icons/fa";
 import "./ImageModal.css";
@@ -25,6 +25,35 @@ export function CloseButton({ closeModal }: { closeModal: () => void }) {
   );
 }
 
+export function ImageWithIndicator(
+  props: React.ImgHTMLAttributes<HTMLImageElement>
+) {
+  const [isLoading, setIsLoading] = useState(true);
+
+  const handleImageLoad = () => {
+    setIsLoading(false);
+  };
+
+  const handleImageError = () => {
+    setIsLoading(false);
+  };
+
+  return (
+    <>
+      {isLoading && (
+        <div className="loading-indicator">
+          <div className="spinner"></div>
+        </div>
+      )}
+      <img
+        {...props}
+        onLoad={handleImageLoad}
+        onError={handleImageError}
+      />
+    </>
+  );
+}
+
 export function ImageContainer() {
   const [selectedImagePath] = useAtom(selectedImagePathAtom);
   const archive = useAtomValue(currentArchiveAtom);
@@ -37,7 +66,7 @@ export function ImageContainer() {
 
   return (
     <div className="image-container">
-      <img src={src} />
+      <ImageWithIndicator key={src} src={src} />
     </div>
   );
 }
