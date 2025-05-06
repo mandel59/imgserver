@@ -1,7 +1,11 @@
 # imgserver - Image Server
 
 ## Overview
-BunとHonoを使用した画像表示サーバーです。指定したディレクトリの画像をWebブラウザで閲覧できます。
+BunとHonoを使用した画像表示Webサーバーです。指定したディレクトリの画像をWebブラウザで閲覧できます。
+
+このアプリはClineとDeepSeekのアシストによって作られました。
+
+このリポジトリにはChatGPTの生成したアイコン画像が含まれています。
 
 ## Run
 
@@ -60,3 +64,7 @@ bun dev
 ```bash
 bun dev --dir /path/to/images
 ```
+
+## License
+
+MIT
