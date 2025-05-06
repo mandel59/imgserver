@@ -10,9 +10,9 @@ export default function Controls() {
   );
   return (
     <div id="controls">
-      <button 
-        onClick={() => refetchCurrentFileItems()}
-        disabled={isFetching}
+      <button
+        onClick={() => !isFetching && refetchCurrentFileItems()}
+        aria-disabled={isFetching}
         className="refresh-button"
         aria-label={isFetching ? "読み込み中" : "ファイル一覧を更新"}
       >
