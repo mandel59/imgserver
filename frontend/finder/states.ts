@@ -1,10 +1,12 @@
 import { atom } from "jotai";
+import { atomWithStorage } from "jotai/utils";
 import { atomWithLocation } from "jotai-location";
 import { atomWithQuery } from "jotai-tanstack-query";
 import { resolve, dirname, basename } from "path-browserify";
 
 import type { FileItem, SortOption } from "@/common/types.ts";
 import { fetchFileItems } from "./api.ts";
+import { atomEffect } from "jotai-effect";
 
 interface LocationState {
   path: string;
@@ -150,3 +152,24 @@ export const onShowNextImageAtom = atom(null, (get, set, delta: number) => {
 });
 
 export const sortOptionAtom = atom<SortOption>("name");
+
+export const darkModeAtom = atomWithStorage<boolean>(
+  "darkMode",
+  window.matchMedia("(prefers-color-scheme: dark)").matches
+);
+
+export const htmlClassAtom = atomEffect((get) => {
+  const darkMode = get(darkModeAtom);
+  const classList = document.documentElement.classList;
+  const first = !(classList.contains("dark") || classList.contains("light"));
+  if (darkMode) {
+    classList.add("dark");
+    classList.remove("light");
+  } else {
+    classList.add("light");
+    classList.remove("dark");
+  }
+  if (!first) {
+    classList.add("transition")
+  }
+})

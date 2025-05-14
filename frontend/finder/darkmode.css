@@ -1,0 +1,143 @@
+@property --text-color {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #333;
+}
+
+@property --bg-color {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #f8f9fa;
+}
+
+@property --card-bg {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: white;
+}
+
+@property --card-shadow-color {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: rgba(0, 0, 0, 0.1);
+}
+
+
+@property --card-shadow {
+  syntax: "*";
+  inherits: true;
+  initial-value: 0 2px 8px --card-shadow-color;
+}
+
+@property --card-hover-shadow-color {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: rgba(0, 0, 0, 0.15);
+}
+
+@property --card-hover-shadow {
+  syntax: "*";
+  inherits: true;
+  initial-value: 0 4px 12px --card-hover-shadow-color;
+}
+
+@property --button-bg {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #e9ecef;
+}
+
+@property --button-border {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #ced4da;
+}
+
+@property --button-text {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #212529;
+}
+
+@property --focus-outline {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #4a90e2;
+}
+
+@property --link-color {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #4263eb;
+}
+
+@property --link-hover-color {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #364fc7;
+}
+
+:root {
+  transition-property:
+    --text-color,
+    --bg-color,
+    --card-bg,
+    --card-shadow-color,
+    --card-hover-shadow-color,
+    --button-bg,
+    --button-border,
+    --button-text,
+    --focus-outline,
+    --link-color,
+    --link-hover-color;
+  transition-duration: 0s;
+  transition-timing-function: ease-out;
+
+  @media (prefers-color-scheme: dark) {
+    --text-color: #e0e0e0;
+    --bg-color: #1e1e1e;
+    --card-bg: #2d2d2d;
+    --card-shadow-color: rgba(0, 0, 0, 0.3);
+    --card-hover-shadow-color: rgba(0, 0, 0, 0.4);
+    --button-bg: #3a3a3a;
+    --button-border: #4d4d4d;
+    --button-text: #f0f0f0;
+    --focus-outline: #6ba8ff;
+    --link-color: #6ba8ff;
+    --link-hover-color: #8bbdff;
+
+    transition-duration: 0s;
+
+    &.light {
+      --text-color: #333;
+      --bg-color: #f8f9fa;
+      --card-bg: white;
+      --card-shadow-color: rgba(0, 0, 0, 0.1);
+      --card-hover-shadow-color: rgba(0, 0, 0, 0.15);
+      --button-bg: #e9ecef;
+      --button-border: #ced4da;
+      --button-text: #212529;
+      --focus-outline: #4a90e2;
+      --link-color: #4263eb;
+      --link-hover-color: #364fc7;
+    }
+  }
+
+  &.dark {
+    --text-color: #e0e0e0;
+    --bg-color: #1e1e1e;
+    --card-bg: #2d2d2d;
+    --card-shadow-color: rgba(0, 0, 0, 0.3);
+    --card-hover-shadow-color: rgba(0, 0, 0, 0.4);
+    --button-bg: #3a3a3a;
+    --button-border: #4d4d4d;
+    --button-text: #f0f0f0;
+    --focus-outline: #6ba8ff;
+    --link-color: #6ba8ff;
+    --link-hover-color: #8bbdff;
+  }
+
+  &.transition {
+    transition-duration: 0.5s;
+  }
+}

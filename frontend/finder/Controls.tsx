@@ -1,10 +1,11 @@
 import { useAtom, useAtomValue } from "jotai";
-import { currentFileItemsQueryAtom, sortOptionAtom } from "./states.ts";
+import { currentFileItemsQueryAtom, sortOptionAtom, darkModeAtom } from "./states.ts";
 import type { SortOption } from "@/common/types.ts";
-import { FaRedo } from "react-icons/fa";
+import { FaRedo, FaMoon, FaSun } from "react-icons/fa";
 
 export default function Controls() {
   const [sortOption, setSortOption] = useAtom(sortOptionAtom);
+  const [darkMode, setDarkMode] = useAtom(darkModeAtom);
   const { refetch: refetchCurrentFileItems, isFetching } = useAtomValue(
     currentFileItemsQueryAtom
   );
@@ -26,6 +27,13 @@ export default function Controls() {
         <option value="name">名前順</option>
         <option value="date">更新日時順</option>
       </select>
+      <button
+        onClick={() => setDarkMode(!darkMode)}
+        className="dark-mode-toggle"
+        aria-label={darkMode ? "ライトモードに切り替え" : "ダークモードに切り替え"}
+      >
+        {darkMode ? <FaMoon /> : <FaSun />}
+      </button>
     </div>
   );
 }

@@ -4,8 +4,10 @@ import ImageModal from "./ImageModal.tsx";
 import Controls from "./Controls.tsx";
 import Breadcrumbs from "./Breadcrumbs.tsx";
 import FileContainer from "./FileContainer.tsx";
+import { htmlClassAtom } from "./states.ts";
 
 export default function Finder() {
+  useAtom(htmlClassAtom);
   return (
     <>
       <div className="header-container">

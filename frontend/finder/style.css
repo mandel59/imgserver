@@ -1,34 +1,5 @@
 @import url("./keyframes.css");
-
-:root {
-  --text-color: #333;
-  --bg-color: #f8f9fa;
-  --card-bg: white;
-  --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  --card-hover-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  --button-bg: #e9ecef;
-  --button-border: #ced4da;
-  --button-text: #212529;
-  --focus-outline: #4a90e2;
-  --link-color: #4263eb;
-  --link-hover-color: #364fc7;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text-color: #e0e0e0;
-    --bg-color: #1e1e1e;
-    --card-bg: #2d2d2d;
-    --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-    --card-hover-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-    --button-bg: #3a3a3a;
-    --button-border: #4d4d4d;
-    --button-text: #f0f0f0;
-    --focus-outline: #6ba8ff;
-    --link-color: #6ba8ff;
-    --link-hover-color: #8bbdff;
-  }
-}
+@import url("./darkmode.css");
 
 body {
   font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
@@ -185,7 +156,8 @@ button:focus-visible,
   outline-offset: 2px;
 }
 
-.refresh-button {
+.refresh-button,
+.dark-mode-toggle {
   width: 32px;
   height: 32px;
   display: flex;
@@ -196,10 +168,16 @@ button:focus-visible,
   & svg {
     width: 16px;
     height: 16px;
+    color: var(--button-text);
+    transition: color 0.2s ease;
   }
-  & .spin {
-    animation: spin 1s linear infinite;
+  &:hover svg {
+    color: var(--link-color);
   }
+}
+
+.refresh-button .spin {
+  animation: spin 1s linear infinite;
 }
 
 .loading-overlay {
