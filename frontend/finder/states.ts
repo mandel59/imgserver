@@ -95,6 +95,8 @@ export const currentFileItemsQueryAtom = atomWithQuery((get) => {
     queryKey: ["files", currentPath],
     queryFn: async (_context) => {
       const files = await fetchFileItems(sortOption, currentPath, archive);
+      // 読み込み完了アニメーションが正常に再生されるよう、待機する。
+      await new Promise(resolve => requestAnimationFrame(resolve));
       return { path: currentPath, files };
     },
   };

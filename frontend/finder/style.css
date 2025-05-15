@@ -176,8 +176,13 @@ button:focus-visible,
   }
 }
 
-.refresh-button .spin {
-  animation: spin 1s linear infinite;
+.refresh-button {
+  &.fetching .spin {
+    animation: spin 1s linear infinite;
+  }
+  &.fetched .spin {
+    animation: spin_end 0.5s ease-out 1;
+  }
 }
 
 .loading-overlay {
