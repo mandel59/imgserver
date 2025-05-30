@@ -1,68 +1,19 @@
+import {
+  imagesDir,
+  loggingPath,
+  keepMetadata,
+} from "../init.ts";
+
 import { Hono } from "hono";
 import { logger } from "hono/logger";
 import { etag } from "hono/etag";
 import { stream } from "hono/streaming";
 import { join, extname, basename, dirname } from "node:path/posix";
 import { readdir, stat } from "node:fs/promises";
-import { parseArgs } from "node:util";
 import sharp from "sharp";
 import AdbZip from "adm-zip";
 import iconv from "iconv-lite";
 import type { FileItem } from "@/common/types";
-
-const {
-  values: {
-    host,
-    port,
-    dir: imagesDir,
-    logging: loggingPath,
-    development,
-    keepMetadata,
-  },
-  positionals,
-} = parseArgs({
-  args: process.argv,
-  options: {
-    host: {
-      type: "string",
-      short: "h",
-      default: "127.0.0.1",
-    },
-    port: {
-      type: "string",
-      short: "p",
-      default: "8000",
-    },
-    dir: {
-      type: "string",
-      short: "d",
-      default: ".",
-    },
-    logging: {
-      type: "string",
-    },
-    development: {
-      type: "boolean",
-      default: false,
-    },
-    keepMetadata: {
-      "type": "boolean",
-      default: false,
-    }
-  },
-  strict: true,
-  allowPositionals: true,
-});
-
-export {
-  host,
-  port,
-  imagesDir,
-  loggingPath,
-  development,
-  positionals,
-  keepMetadata,
-};
 
 const imageExtensions = [
   ".jpg",

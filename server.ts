@@ -1,8 +1,9 @@
+import { host, port, imagesDir, development } from "./init.ts";
+
 import Bun from "bun";
 import { name, version } from "./package.json";
-import app, { host, port, imagesDir, development } from "./backend/app.ts";
+import app from "./backend/app.ts";
 import finder from "./frontend/finder/index.html";
-import { resolve } from "node:path";
 import os from "node:os";
 import { isIP } from "node:net";
 
@@ -57,7 +58,7 @@ function serverUrl() {
 export default function serve() {
   console.log(`${name} ${version}`);
   console.log(`Powered by Bun ${Bun.version_with_sha}`);
-  console.log(`Serving images from ${resolve(imagesDir)}`);
+  console.log(`Serving images from ${imagesDir}`);
 
   const u = serverUrl();
 
