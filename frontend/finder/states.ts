@@ -127,7 +127,10 @@ export const selectedImageIndexAtom = atom<number | null>(null);
 export const selectedImagePathAtom = atom((get) => {
   const path = get(currentPathAtom);
   const imageName = get(selectedImageNameAtom);
-  return imageName ? `${path}/${imageName}` : "";
+  if (path) {
+    return imageName ? `${path}/${imageName}` : "";
+  }
+  return imageName ?? "";
 });
 
 export const onImageModalOpenAtom = atom(
