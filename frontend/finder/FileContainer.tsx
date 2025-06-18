@@ -1,12 +1,14 @@
-import { useAtom } from "jotai";
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import type { FileItem } from "@/common/types.ts";
 import { currentFileItemsQueryAtom } from "./states/fileList.ts";
 import { currentImagesAtom, onImageModalOpenAtom } from "./states/image.ts";
 import {
-  onNavigateAtom,
-  updateLocation,
-  locationOfImage,
-  locationOfDir,
+  type Navigation,
+  locationAtom,
+  urlOfLocation,
+  navigationForImage,
+  navigationForDir,
+  navigated,
 } from "./states/location.ts";
 import { imageResourceUrl } from "./resources.ts";
 
@@ -65,12 +67,15 @@ export function FolderIcon({
   width: number;
   height: number;
 }) {
-  const [, onNavigate] = useAtom(onNavigateAtom);
+  const [location, setLocation] = useAtom(locationAtom);
+  const onNavigate = (navigation: Navigation) => {
+    setLocation(navigated(location, navigation));
+  };
 
   const handleClick = (e: React.MouseEvent) => {
     if (e.button === 0 && !(e.metaKey || e.altKey || e.ctrlKey || e.shiftKey)) {
       e.preventDefault();
-      onNavigate(locationOfDir(file.path, file.archive));
+      onNavigate(navigationForDir(file.path, file.archive));
     }
   };
 
@@ -80,7 +85,7 @@ export function FolderIcon({
       !(e.metaKey || e.altKey || e.ctrlKey || e.shiftKey)
     ) {
       e.preventDefault();
-      onNavigate(locationOfDir(file.path, file.archive));
+      onNavigate(navigationForDir(file.path, file.archive));
     }
   };
 
@@ -90,7 +95,11 @@ export function FolderIcon({
       file={file}
       width={width}
       height={height}
-      href={updateLocation(locationOfDir(file.path, file.archive)).href}
+      href={
+        urlOfLocation(
+          navigated(location, navigationForDir(file.path, file.archive))
+        ).href
+      }
       onClick={handleClick}
       onKeyDown={handleKeyDown}
     />
@@ -106,8 +115,9 @@ export function ImageIcon({
   width: number;
   height: number;
 }) {
-  const [, onImageModalOpen] = useAtom(onImageModalOpenAtom);
-  const [currentImages] = useAtom(currentImagesAtom);
+  const location = useAtomValue(locationAtom);
+  const onImageModalOpen = useSetAtom(onImageModalOpenAtom);
+  const currentImages = useAtomValue(currentImagesAtom);
 
   const openImage = () => {
     const index = currentImages.findIndex((img) => img.path === file.path);
@@ -141,7 +151,11 @@ export function ImageIcon({
       file={file}
       width={width}
       height={height}
-      href={updateLocation(locationOfImage(file.path, file.archive)).href}
+      href={
+        urlOfLocation(
+          navigated(location, navigationForImage(file.path, file.archive))
+        ).href
+      }
       onClick={handleClick}
       onKeyDown={handleKeyDown}
     >

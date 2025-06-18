@@ -3,17 +3,19 @@ import { focusAtom } from "jotai-optics";
 import { atomWithLocation } from "jotai-location";
 import { resolve, dirname, basename } from "path-browserify";
 
-interface LocationState {
+export interface LocationState {
   path: string;
   image: string;
   archive: string;
 }
 
+export type Navigation = Partial<LocationState>;
+
 function locationStateEquivalent(a: LocationState, b: LocationState) {
   return a.path === b.path && a.archive === b.archive;
 }
 
-export function updateLocation(location: LocationState): URL {
+export function urlOfLocation(location: LocationState): URL {
   const url = new URL(window.location.href);
   url.pathname = resolve("/", location.path);
   url.search = "";
@@ -22,7 +24,11 @@ export function updateLocation(location: LocationState): URL {
   return url;
 }
 
-export function locationOfDir(path: string, archive: string): LocationState {
+export function navigated(location: LocationState, navigation: Navigation): LocationState {
+  return { ...location, ...navigation };
+}
+
+export function navigationForDir(path: string, archive: string): Navigation {
   return {
     path,
     image: "",
@@ -30,7 +36,7 @@ export function locationOfDir(path: string, archive: string): LocationState {
   }
 }
 
-export function locationOfImage(path: string, archive: string): LocationState {
+export function navigationForImage(path: string, archive: string): Navigation {
   return {
     path: dirname(path),
     image: basename(path),
@@ -51,7 +57,7 @@ function getLocation(): LocationState {
 function applyLocation(location: LocationState) {
   const currentLocation = getLocation();
   const replace = locationStateEquivalent(currentLocation, location);
-  const url = updateLocation(location);
+  const url = urlOfLocation(location);
   if (replace) {
     window.history.replaceState(window.history.state, "", url);
   } else {
@@ -59,11 +65,8 @@ function applyLocation(location: LocationState) {
   }
 }
 
-const locationAtom = atomWithLocation({ getLocation, applyLocation });
+export const locationAtom = atomWithLocation({ getLocation, applyLocation });
 
 export const currentPathAtom = focusAtom(locationAtom, optic => optic.prop("path"));
 export const currentArchiveAtom = focusAtom(locationAtom, optic => optic.prop("archive"));
 export const selectedImageNameAtom = focusAtom(locationAtom, optic => optic.prop("image"));
-export const onNavigateAtom = atom(null, (_get, set, location: LocationState) => {
-  set(locationAtom, location);
-});

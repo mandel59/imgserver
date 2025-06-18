@@ -1,18 +1,23 @@
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { useCallback } from "react";
 import {
+  type Navigation,
   currentArchiveAtom,
   currentPathAtom,
-  locationOfDir,
-  onNavigateAtom,
-  updateLocation,
+  navigationForDir,
+  urlOfLocation,
+  locationAtom,
+  navigated,
 } from "./states/location.ts";
 import "./Breadcrumbs.css";
 
 export default function Breadcrumbs() {
   const path = useAtomValue(currentPathAtom);
   const archive = useAtomValue(currentArchiveAtom);
-  const onNavigate = useSetAtom(onNavigateAtom);
+  const [location, setLocation] = useAtom(locationAtom);
+  const onNavigate = (navigation: Navigation) => {
+    setLocation(navigated(location, navigation));
+  };
 
   const handlePathClick = useCallback(
     (e: React.MouseEvent, path: string, archive: string) => {
@@ -21,7 +26,7 @@ export default function Breadcrumbs() {
         !(e.metaKey || e.altKey || e.ctrlKey || e.shiftKey)
       ) {
         e.preventDefault();
-        onNavigate(locationOfDir(path, archive));
+        onNavigate(navigationForDir(path, archive));
       }
     },
     [onNavigate, path, archive]
@@ -34,7 +39,7 @@ export default function Breadcrumbs() {
         !(e.metaKey || e.altKey || e.ctrlKey || e.shiftKey)
       ) {
         e.preventDefault();
-        onNavigate(locationOfDir(path, archive));
+        onNavigate(navigationForDir(path, archive));
       }
     },
     [onNavigate, path, archive]
@@ -43,7 +48,7 @@ export default function Breadcrumbs() {
   return (
     <div className="breadcrumbs-container">
       <a
-        href={updateLocation(locationOfDir("", "")).href}
+        href={urlOfLocation(navigated(location, navigationForDir("", ""))).href}
         onClick={(e) => handlePathClick(e, "", "")}
         onKeyDown={(e) => handleKeyDown(e, "", "")}
         className={`breadcrumbs-link breadcrumbs-link-home ${
@@ -68,8 +73,11 @@ export default function Breadcrumbs() {
               <span className="breadcrumbs-separator">{">"}</span>
               <a
                 href={
-                  updateLocation(
-                    locationOfDir(currentPartPath, currentPartArchive)
+                  urlOfLocation(
+                    navigated(
+                      location,
+                      navigationForDir(currentPartPath, currentPartArchive)
+                    )
                   ).href
                 }
                 onClick={(e) =>
