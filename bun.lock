@@ -13,7 +13,9 @@
         "jotai": "^2.12.4",
         "jotai-effect": "^2.0.2",
         "jotai-location": "^0.5.5",
+        "jotai-optics": "^0.4.0",
         "jotai-tanstack-query": "^0.9.0",
+        "optics-ts": "^2.4.1",
         "path-browserify": "^1.0.1",
         "react": "^19.1.0",
         "react-dom": "^19.1.0",
@@ -149,7 +151,11 @@
 
     "jotai-location": ["jotai-location@0.5.5", "", { "peerDependencies": { "jotai": ">=1.11.0" } }, "sha512-6QW/7W9IJHjhbn7gRgAw4sC30k0/G6JiC4uPlKi8ZPZGYk7R7r9PyMD2eVhL4XSxxag89JxS1iSyr6BIXsB4Sw=="],
 
+    "jotai-optics": ["jotai-optics@0.4.0", "", { "peerDependencies": { "jotai": ">=2.0.0", "optics-ts": ">=2.0.0" } }, "sha512-osbEt9AgS55hC4YTZDew2urXKZkaiLmLqkTS/wfW5/l0ib8bmmQ7kBXSFaosV6jDDWSp00IipITcJARFHdp42g=="],
+
     "jotai-tanstack-query": ["jotai-tanstack-query@0.9.0", "", { "peerDependencies": { "@tanstack/query-core": "*", "jotai": ">=2.0.0" } }, "sha512-8n7/xV14+ZE63dyqngtmqs6aV1bNnQJF9bJN5Bj70USc2cMFRmsVhGGzL1cSvp5E/xXasU37czFFaZ0vavmyfA=="],
+
+    "optics-ts": ["optics-ts@2.4.1", "", {}, "sha512-HaYzMHvC80r7U/LqAd4hQyopDezC60PO2qF5GuIwALut2cl5rK1VWHsqTp0oqoJJWjiv6uXKqsO+Q2OO0C3MmQ=="],
 
     "path-browserify": ["path-browserify@1.0.1", "", {}, "sha512-b7uo2UCUOYZcnF/3ID0lulOJi/bafxa1xPe7ZPsammBSpjSWQkjNxlt635YGS2MiR9GjvuXCtz2emr3jbsz98g=="],
 

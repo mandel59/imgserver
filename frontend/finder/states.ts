@@ -3,6 +3,7 @@ import { atomWithStorage } from "jotai/utils";
 import { atomWithLocation } from "jotai-location";
 import { atomWithQuery } from "jotai-tanstack-query";
 import { resolve, dirname, basename } from "path-browserify";
+import { focusAtom } from "jotai-optics";
 
 import type { FileItem, SortOption } from "@/common/types.ts";
 import { fetchFileItems } from "./api.ts";
@@ -66,26 +67,11 @@ function applyLocation(location: LocationState) {
 
 const locationAtom = atomWithLocation({ getLocation, applyLocation });
 
-export const currentPathAtom = atom(
-  (get) => get(locationAtom).path,
-  (get, set, path: string) => {
-    set(locationAtom, { ...get(locationAtom), path });
-  }
-);
+export const currentPathAtom = focusAtom(locationAtom, optic => optic.prop("path"));
 
-export const currentArchiveAtom = atom(
-  (get) => get(locationAtom).archive,
-  (get, set, archive: string) => {
-    set(locationAtom, { ...get(locationAtom), archive });
-  }
-)
+export const currentArchiveAtom = focusAtom(locationAtom, optic => optic.prop("archive"));
 
-export const selectedImageNameAtom = atom(
-  (get) => get(locationAtom).image,
-  (get, set, image: string) => {
-    set(locationAtom, { ...get(locationAtom), image });
-  }
-);
+export const selectedImageNameAtom = focusAtom(locationAtom, optic => optic.prop("image"));
 
 export const currentFileItemsQueryAtom = atomWithQuery((get) => {
   const sortOption = get(sortOptionAtom);
