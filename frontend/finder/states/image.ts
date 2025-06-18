@@ -1,7 +1,7 @@
 import { atom } from "jotai";
 import type { FileItem } from "@/common/types.ts";
 import { currentPathAtom, selectedImageNameAtom } from "./location.ts";
-import { currentFileItemsQueryAtom } from "./fileList.ts";
+import { filesListAtom } from "./fileList.ts";
 
 export const isImageModalOpenAtom = atom(
   (get) => get(selectedImageNameAtom) !== "",
@@ -13,10 +13,7 @@ export const isImageModalOpenAtom = atom(
 );
 
 export const currentImagesAtom = atom<FileItem[]>(
-  (get) =>
-    get(currentFileItemsQueryAtom).data?.files?.filter?.(
-      (file) => file.isImage
-    ) ?? []
+  (get) => get(filesListAtom).filter((file) => file.isImage)
 );
 
 export const selectedImageIndexAtom = atom<number | null>(null);

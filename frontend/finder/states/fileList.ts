@@ -1,7 +1,9 @@
 import { atom } from "jotai";
 import { atomWithQuery } from "jotai-tanstack-query";
+import { minimatch } from "minimatch";
+
 import type { SortOption } from "@/common/types.ts";
-import { currentPathAtom, currentArchiveAtom } from "./location.ts";
+import { currentPathAtom, currentArchiveAtom, globAtom } from "./location.ts";
 import { fetchFileItems } from "../api.ts";
 
 export const sortOptionAtom = atom<SortOption>("name");
@@ -20,3 +22,8 @@ export const currentFileItemsQueryAtom = atomWithQuery((get) => {
     },
   };
 });
+
+export const filesListAtom = atom(get => {
+  const glob = get(globAtom);
+  return get(currentFileItemsQueryAtom).data?.files?.filter(file => glob === "" || minimatch(file.name, `${glob}*`)) ?? [];
+})
