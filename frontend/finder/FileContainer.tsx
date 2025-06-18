@@ -1,6 +1,6 @@
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import type { FileItem } from "@/common/types.ts";
-import { currentFileItemsQueryAtom } from "./states/fileList.ts";
+import { currentFileItemsQueryAtom, filesListAtom } from "./states/fileList.ts";
 import { currentImagesAtom, onImageModalOpenAtom } from "./states/image.ts";
 import {
   type Navigation,
@@ -204,9 +204,9 @@ export function FileIcon({
 }
 
 export default function FileContainer() {
-  const [{ data, isLoading }] = useAtom(currentFileItemsQueryAtom);
+  const [{ isLoading }] = useAtom(currentFileItemsQueryAtom);
 
-  const files: FileItem[] = data?.files ?? [];
+  const files: FileItem[] = useAtomValue(filesListAtom);
 
   return (
     <div id="file-container">
@@ -217,7 +217,7 @@ export default function FileContainer() {
         </div>
       ) : null}
       {files.map((file, i) => (
-        <FileIcon key={i} file={file} />
+        <FileIcon key={file.name} file={file} />
       ))}
     </div>
   );
