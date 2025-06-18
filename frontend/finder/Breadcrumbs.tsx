@@ -6,7 +6,7 @@ import {
   locationOfDir,
   onNavigateAtom,
   updateLocation,
-} from "./states.ts";
+} from "./states/location.ts";
 import "./Breadcrumbs.css";
 
 export default function Breadcrumbs() {

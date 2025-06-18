@@ -2,8 +2,8 @@ import { useAtom, useAtomValue } from "jotai";
 import {
   currentFileItemsQueryAtom,
   sortOptionAtom,
-  darkModeAtom,
-} from "./states.ts";
+} from "./states/fileList.ts";
+import { darkModeAtom } from "./states/display.ts";
 import type { SortOption } from "@/common/types.ts";
 import { FaRedo, FaMoon, FaSun } from "react-icons/fa";
 

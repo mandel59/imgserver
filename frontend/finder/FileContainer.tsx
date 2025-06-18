@@ -1,14 +1,13 @@
 import { useAtom } from "jotai";
 import type { FileItem } from "@/common/types.ts";
+import { currentFileItemsQueryAtom } from "./states/fileList.ts";
+import { currentImagesAtom, onImageModalOpenAtom } from "./states/image.ts";
 import {
-  currentFileItemsQueryAtom,
   onNavigateAtom,
-  currentImagesAtom,
-  onImageModalOpenAtom,
   updateLocation,
   locationOfImage,
   locationOfDir,
-} from "./states.ts";
+} from "./states/location.ts";
 import { imageResourceUrl } from "./resources.ts";
 
 export function IconWithName({
@@ -149,7 +148,9 @@ export function ImageIcon({
       <img
         loading="lazy"
         src={`${url}?archive=${file.archive}&height=${height}&format=webp`}
-        srcSet={`${url}?archive=${file.archive}&height=${height * 2}&format=webp 2x`}
+        srcSet={`${url}?archive=${file.archive}&height=${
+          height * 2
+        }&format=webp 2x`}
         style={{
           width: `100%`,
           height: `100%`,

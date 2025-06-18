@@ -9,8 +9,8 @@ import {
   currentImagesAtom,
   onShowNextImageAtom,
   selectedImagePathAtom,
-  currentArchiveAtom,
-} from "./states.ts";
+} from "./states/image.ts";
+import { currentArchiveAtom } from "./states/location.ts";
 import { imageResourceUrl } from "./resources.ts";
 
 export function CloseButton({ closeModal }: { closeModal: () => void }) {

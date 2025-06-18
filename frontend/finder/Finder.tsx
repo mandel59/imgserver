@@ -4,7 +4,7 @@ import ImageModal from "./ImageModal.tsx";
 import Controls from "./Controls.tsx";
 import Breadcrumbs from "./Breadcrumbs.tsx";
 import FileContainer from "./FileContainer.tsx";
-import { htmlClassAtom } from "./states.ts";
+import { htmlClassAtom } from "./states/display.ts";
 
 export default function Finder() {
   useAtom(htmlClassAtom);
