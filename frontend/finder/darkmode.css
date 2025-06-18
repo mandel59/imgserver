@@ -77,6 +77,12 @@
   initial-value: #364fc7;
 }
 
+@property --placeholder-color {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #6c757d;
+}
+
 :root {
   transition-property:
     --text-color,
@@ -89,7 +95,8 @@
     --button-text,
     --focus-outline,
     --link-color,
-    --link-hover-color;
+    --link-hover-color,
+    --placeholder-color;
   transition-duration: 0s;
   transition-timing-function: ease-out;
 
@@ -105,6 +112,7 @@
     --focus-outline: #6ba8ff;
     --link-color: #6ba8ff;
     --link-hover-color: #8bbdff;
+    --placeholder-color: #8e8e8e;
 
     transition-duration: 0s;
 
@@ -120,6 +128,7 @@
       --focus-outline: #4a90e2;
       --link-color: #4263eb;
       --link-hover-color: #364fc7;
+    --placeholder-color: #6c757d;
     }
   }
 

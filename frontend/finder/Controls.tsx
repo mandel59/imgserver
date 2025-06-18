@@ -4,12 +4,14 @@ import {
   sortOptionAtom,
 } from "./states/fileList.ts";
 import { darkModeAtom } from "./states/display.ts";
+import { globAtom } from "./states/location.ts";
 import type { SortOption } from "@/common/types.ts";
 import { FaRedo, FaMoon, FaSun } from "react-icons/fa";
 
 export default function Controls() {
   const [sortOption, setSortOption] = useAtom(sortOptionAtom);
   const [darkMode, setDarkMode] = useAtom(darkModeAtom);
+  const [glob, setGlob] = useAtom(globAtom);
   const {
     refetch: refetchCurrentFileItems,
     isFetching,
@@ -27,6 +29,14 @@ export default function Controls() {
       >
         <FaRedo className="spin" />
       </button>
+      <input
+        type="text"
+        id="search-glob"
+        value={glob}
+        onChange={(e) => setGlob(e.target.value)}
+        placeholder="ファイル名検索 (例: *.jpg)"
+        className="search-input"
+      />
       <select
         id="sort-option"
         value={sortOption}

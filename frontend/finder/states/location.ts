@@ -7,6 +7,7 @@ export interface LocationState {
   path: string;
   image: string;
   archive: string;
+  glob: string;
 }
 
 export type Navigation = Partial<LocationState>;
@@ -21,6 +22,7 @@ export function urlOfLocation(location: LocationState): URL {
   url.search = "";
   if (location.image) url.searchParams.set("image", location.image);
   if (location.archive) url.searchParams.set("archive", location.archive);
+  if (location.glob) url.searchParams.set("glob", location.glob);
   return url;
 }
 
@@ -51,6 +53,7 @@ function getLocation(): LocationState {
     path: decodeURI(u.pathname).slice(1),
     image: searchParams?.get("image") ?? "",
     archive: searchParams?.get("archive") ?? "",
+    glob: searchParams?.get("glob") ?? "",
   };
 }
 
@@ -70,3 +73,4 @@ export const locationAtom = atomWithLocation({ getLocation, applyLocation });
 export const currentPathAtom = focusAtom(locationAtom, optic => optic.prop("path"));
 export const currentArchiveAtom = focusAtom(locationAtom, optic => optic.prop("archive"));
 export const selectedImageNameAtom = focusAtom(locationAtom, optic => optic.prop("image"));
+export const globAtom = focusAtom(locationAtom, optic => optic.prop("glob"));
