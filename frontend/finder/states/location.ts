@@ -35,6 +35,7 @@ export function navigationForDir(path: string, archive: string): Navigation {
     path,
     image: "",
     archive,
+    glob: "",
   }
 }
 
