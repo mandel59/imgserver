@@ -55,9 +55,9 @@ export const prefetchImagesAtom = atom((get) => {
   const nextImage = images[nextIndex]!;
 
   if (previousImage === nextImage) {
-    return [nextImage];
+    return [nextImage].filter(fileItem => !fileItem.archive);
   } else {
-    return [previousImage, nextImage];
+    return [previousImage, nextImage].filter(fileItem => !fileItem.archive);
   }
 });
 
