@@ -1,3 +1,4 @@
+import type { FileItem } from "@/common/types";
 import { backendUrl } from "./settings";
 
 const beDir = new URL(`${backendUrl}/`);
@@ -16,4 +17,10 @@ export function imageResourceUrl(
     u.searchParams.set(key, s);
   }
   return u.href;
+}
+
+export function imageResourceUrlForFileItem(fileItem: FileItem) {
+  return imageResourceUrl(fileItem.path, {
+    archive: fileItem.archive
+  })
 }

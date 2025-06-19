@@ -16,7 +16,15 @@ export const currentImagesAtom = atom<FileItem[]>(
   (get) => get(filesListAtom).filter((file) => file.isImage)
 );
 
-export const selectedImageIndexAtom = atom<number | null>(null);
+export const selectedImageIndexAtom = atom((get) => {
+  const images = get(currentImagesAtom);
+  const imagePath = get(selectedImagePathAtom);
+  const index = images.findIndex((file) => file.path === imagePath);
+  if (index === -1) {
+    return undefined
+  }
+  return index
+});
 
 export const selectedImagePathAtom = atom((get) => {
   const path = get(currentPathAtom);
@@ -31,21 +39,34 @@ export const onImageModalOpenAtom = atom(
   null,
   (_get, set, imageName: string, index: number) => {
     set(selectedImageNameAtom, imageName);
-    set(selectedImageIndexAtom, index);
   }
 );
 
+export const prefetchImagesAtom = atom((get) => {
+  const images = get(currentImagesAtom);
+  const index = get(selectedImageIndexAtom);
+
+  if (index === undefined) return [];
+  if (images.length === 1) return [];
+
+  const previousIndex = (index - 1 + images.length) % images.length;
+  const nextIndex = (index + 1 + images.length) % images.length;
+  const previousImage = images[previousIndex]!;
+  const nextImage = images[nextIndex]!;
+
+  if (previousImage === nextImage) {
+    return [nextImage];
+  } else {
+    return [previousImage, nextImage];
+  }
+});
+
 export const onShowNextImageAtom = atom(null, (get, set, delta: number) => {
   const images = get(currentImagesAtom);
-  const imagePath = get(selectedImagePathAtom);
-  const index =
-    get(selectedImageIndexAtom) ??
-    images.findIndex((file) => file.path === imagePath);
-
-  if (images.length === 0 || index === -1) return;
+  const index = get(selectedImageIndexAtom);
+  if (index === undefined) return;
   const newIndex = (index + delta + images.length) % images.length;
   const imageName = images[newIndex]?.name ?? "";
 
   set(selectedImageNameAtom, imageName);
-  set(selectedImageIndexAtom, newIndex);
 });

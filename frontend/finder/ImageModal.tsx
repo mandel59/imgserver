@@ -9,9 +9,10 @@ import {
   currentImagesAtom,
   onShowNextImageAtom,
   selectedImagePathAtom,
+  prefetchImagesAtom,
 } from "./states/image.ts";
 import { currentArchiveAtom } from "./states/location.ts";
-import { imageResourceUrl } from "./resources.ts";
+import { imageResourceUrl, imageResourceUrlForFileItem } from "./resources.ts";
 
 export function CloseButton({ closeModal }: { closeModal: () => void }) {
   return (
@@ -53,6 +54,7 @@ export function ImageWithIndicator(
 export function ImageContainer() {
   const [selectedImagePath] = useAtom(selectedImagePathAtom);
   const archive = useAtomValue(currentArchiveAtom);
+  const prefetchImages = useAtomValue(prefetchImagesAtom);
   const [prevSrc, setPrevSrc] = useState<string | null>(null);
   const [currentSrc, setCurrentSrc] = useState<string | null>(null);
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -98,6 +100,15 @@ export function ImageContainer() {
         className={prevSrc ? "image-container fade-in" : "image-container"}
       >
         <ImageWithIndicator src={currentSrc} />
+        {prefetchImages.map((fileItem) => {
+          return (
+            <link
+              key={fileItem.name}
+              rel="prefetch"
+              href={imageResourceUrlForFileItem(fileItem)}
+            />
+          );
+        })}
       </div>
     </div>
   );
