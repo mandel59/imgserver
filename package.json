@@ -10,6 +10,7 @@
   "scripts": {
     "dev": "bun run --hot index.ts --dir images --logging \"/.be/api/*\" --development",
     "start": "bun run index.ts --dir images",
+    "compile": "bun build --compile --outfile=imgserver index.ts",
     "test": "bun test"
   },
   "devDependencies": {
