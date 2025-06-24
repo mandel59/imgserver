@@ -3,9 +3,10 @@ import { host, port, imagesDir, development } from "./init.ts";
 import Bun from "bun";
 import { name, version } from "./package.json";
 import app from "./backend/app.ts";
-import finder from "./frontend/finder/index.html";
+import finder from "./index.html";
 import os from "node:os";
 import { isIP } from "node:net";
+import { basename } from "node:path";
 
 function maybeInContainer(host: string) {
   return /^[0-9a-f]{12}$/.test(host);
@@ -67,7 +68,18 @@ export default function serve() {
     port: port,
     routes: {
       "/.be/*": app.fetch,
-      "/*": finder,
+      "/": finder,
+      "/*": {
+        // Bun's SPA support is limited, so redirect to root first.
+        GET: (req: Bun.BunRequest) => {
+          const u = new URL(req.url);
+          const pathname = u.pathname;
+          u.pathname = "/";
+          // Use a temporary parameter to hold the path value
+          u.searchParams.set("path", decodeURIComponent(pathname.slice(1)));
+          return Response.redirect(u);
+        }
+      }
     },
     development,
   });
@@ -75,8 +87,4 @@ export default function serve() {
   console.log(`Server is running at ${u.href}`);
 
   return server;
-}
-
-if (process.argv[1] === import.meta.filename) {
-  serve();
 }

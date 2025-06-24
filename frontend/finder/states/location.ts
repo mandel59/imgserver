@@ -26,6 +26,16 @@ export function urlOfLocation(location: LocationState): URL {
   return url;
 }
 
+export function locationOfUrl(url: URL): LocationState {
+  const searchParams = url.searchParams;
+  return {
+    path: decodeURI(url.pathname).slice(1) || searchParams?.get("path") || "",
+    image: searchParams?.get("image") ?? "",
+    archive: searchParams?.get("archive") ?? "",
+    glob: searchParams?.get("glob") ?? "",
+  };
+}
+
 export function navigated(location: LocationState, navigation: Navigation): LocationState {
   return { ...location, ...navigation };
 }
@@ -49,13 +59,7 @@ export function navigationForImage(path: string, archive: string): Navigation {
 
 function getLocation(): LocationState {
   const u = new URL(window.location.href);
-  const searchParams = u.searchParams;
-  return {
-    path: decodeURI(u.pathname).slice(1),
-    image: searchParams?.get("image") ?? "",
-    archive: searchParams?.get("archive") ?? "",
-    glob: searchParams?.get("glob") ?? "",
-  };
+  return locationOfUrl(u);
 }
 
 function applyLocation(location: LocationState) {
@@ -69,7 +73,17 @@ function applyLocation(location: LocationState) {
   }
 }
 
-export const locationAtom = atomWithLocation({ getLocation, applyLocation });
+function getAndCanonicalizeLocation() {
+  const locationHref = window.location.href;
+  const locationState = locationOfUrl(new URL(locationHref));
+  const u = urlOfLocation(locationState);
+  if (u.href !== locationHref) {
+    applyLocation(locationState);
+  }
+  return locationState;
+}
+
+export const locationAtom = atomWithLocation({ getLocation: getAndCanonicalizeLocation, applyLocation });
 
 export const currentPathAtom = focusAtom(locationAtom, optic => optic.prop("path"));
 export const currentArchiveAtom = focusAtom(locationAtom, optic => optic.prop("archive"));
