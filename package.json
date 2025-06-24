@@ -5,13 +5,11 @@
   "type": "module",
   "license": "MIT",
   "bin": {
-    "imgserver": "dist/index.js"
+    "imgserver": "index.ts"
   },
   "scripts": {
     "dev": "bun run --hot index.ts --dir images --logging \"/.be/api/*\" --development",
-    "start": "bun run build && bun run dist --dir images",
-    "build": "bun build --target=bun --production --outdir=dist index.ts",
-    "prepare": "bun run build",
+    "start": "bun run index.ts --dir images",
     "test": "bun test"
   },
   "devDependencies": {
