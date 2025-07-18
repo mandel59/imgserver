@@ -154,7 +154,7 @@ app.get("/.be/images/*", etag(), async (c) => {
     }
 
     // ETag生成 (リサイズパラメータがある場合は含める)
-    let etagValue = `"${mtime.toString(16)}-${fileSize.toString(16)}"`;
+    let etagValue = `${mtime.toString(16)}-${fileSize.toString(16)}`;
 
     if (keepMetadata) {
       etagValue += "-km"
@@ -170,12 +170,12 @@ app.get("/.be/images/*", etag(), async (c) => {
         })
       ).toString("hex");
 
-      etagValue = `"${mtime.toString(16)}-${fileSize.toString(
+      etagValue = `${mtime.toString(16)}-${fileSize.toString(
         16
-      )}-${paramsHash}"`;
+      )}-${paramsHash}`;
     }
 
-    c.header("ETag", etagValue);
+    c.header("ETag", `"${etagValue}"`);
 
     if (width || height) {
       const validFitModes = [
