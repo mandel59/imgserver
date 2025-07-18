@@ -10,6 +10,7 @@ const {
     logging: loggingPath,
     development,
     keepMetadata,
+    corsOrigin,
   },
   positionals,
 } = parseArgs({
@@ -40,6 +41,11 @@ const {
     keepMetadata: {
       "type": "boolean",
       default: false,
+    },
+    corsOrigin: {
+      "type": "string",
+      multiple: true,
+      default: [],
     }
   },
   strict: true,
@@ -63,4 +69,5 @@ export {
   development,
   positionals,
   keepMetadata,
+  corsOrigin,
 };

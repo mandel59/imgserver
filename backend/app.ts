@@ -2,12 +2,14 @@ import {
   imagesDir,
   loggingPath,
   keepMetadata,
+  corsOrigin,
 } from "../init.ts";
 
 import { Hono } from "hono";
 import { logger } from "hono/logger";
 import { etag } from "hono/etag";
 import { stream } from "hono/streaming";
+import { cors } from "hono/cors";
 import { join, extname, basename, dirname } from "node:path/posix";
 import { readdir, stat } from "node:fs/promises";
 import sharp from "sharp";
@@ -35,6 +37,14 @@ const app = new Hono();
 if (loggingPath) {
   // アクセスログミドルウェア
   app.use(loggingPath, logger());
+}
+
+if (corsOrigin.length > 0) {
+  app.use("/.be/images/*", cors({
+    origin: corsOrigin.includes("*") ? "*" : corsOrigin,
+    allowMethods: ["GET", "OPTIONS"],
+    exposeHeaders: ["*"],
+  }))
 }
 
 // 画像ファイル配信 (エラーハンドリング強化版)
