@@ -11,6 +11,7 @@ const {
     development,
     keepMetadata,
     corsOrigin,
+    cacheMaxAge: cacheMaxAgeStr,
   },
   positionals,
 } = parseArgs({
@@ -46,13 +47,24 @@ const {
       "type": "string",
       multiple: true,
       default: [],
-    }
+    },
+    cacheMaxAge: {
+      type: "string",
+      multiple: false,
+      default: "60",
+    },
   },
   strict: true,
   allowPositionals: true,
 });
 
 const imagesDir = resolve(imagesRelativeDir);
+
+const cacheMaxAgeNum = parseInt(cacheMaxAgeStr, 10);
+const cacheMaxAge
+  = Number.isSafeInteger(cacheMaxAgeNum) && cacheMaxAgeNum > 0
+    ? cacheMaxAgeNum
+    : 0;
 
 if (!import.meta.dirname.startsWith("/$")) {
   // FIXME: Change current directory to import.meta.dirname
@@ -70,4 +82,5 @@ export {
   positionals,
   keepMetadata,
   corsOrigin,
+  cacheMaxAge,
 };

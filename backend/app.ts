@@ -3,6 +3,7 @@ import {
   loggingPath,
   keepMetadata,
   corsOrigin,
+  cacheMaxAge,
 } from "../init.ts";
 
 import { Hono } from "hono";
@@ -176,6 +177,10 @@ app.get("/.be/images/*", etag(), async (c) => {
     }
 
     c.header("ETag", `"${etagValue}"`);
+
+    if (cacheMaxAge > 0) {
+      c.header("Cache-Control", `max-age=${cacheMaxAge}, immutable`);
+    }
 
     if (width || height) {
       const validFitModes = [
