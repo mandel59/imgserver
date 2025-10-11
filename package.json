@@ -21,7 +21,7 @@
     "@types/react-dom": "^19.1.7"
   },
   "peerDependencies": {
-    "bun": "1.2.20",
+    "bun": "^1.3.0",
     "typescript": "^5.8.3"
   },
   "dependencies": {
