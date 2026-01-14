@@ -1,13 +1,14 @@
 import { useAtom, useAtomValue, useStore } from "jotai";
 import React, { useEffect, useCallback, useRef, useState } from "react";
 import { useSwipeable } from "react-swipeable";
-import { FaTimes } from "react-icons/fa";
+import { FaChevronLeft, FaChevronRight, FaTimes } from "react-icons/fa";
 import "./ImageModal.css";
 
 import {
   isImageModalOpenAtom,
   currentImagesAtom,
   onShowNextImageAtom,
+  selectedImageIndexAtom,
   selectedImagePathAtom,
   prefetchImagesAtom,
 } from "./states/image.ts";
@@ -118,6 +119,8 @@ export default function ImageModal() {
   const store = useStore();
   const [isImageModalOpen, setIsModalOpen] = useAtom(isImageModalOpenAtom);
   const [, onShowNextImage] = useAtom(onShowNextImageAtom);
+  const images = useAtomValue(currentImagesAtom);
+  const selectedImageIndex = useAtomValue(selectedImageIndexAtom);
   const dialogRef = useRef<HTMLDialogElement>(null);
 
   // react-swipeableでスワイプ操作を設定
@@ -213,6 +216,9 @@ export default function ImageModal() {
     [dialogRef]
   );
 
+  const showSwitchButtons =
+    isImageModalOpen && selectedImageIndex !== undefined && images.length > 1;
+
   return (
     <dialog
       aria-label="Image"
@@ -222,6 +228,26 @@ export default function ImageModal() {
       onClose={closeModal}
     >
       <CloseButton closeModal={closeModal} />
+      {showSwitchButtons && (
+        <>
+          <button
+            type="button"
+            className="image-switch-button image-switch-button-left"
+            aria-label="Previous image"
+            onClick={() => onShowNextImage(-1)}
+          >
+            <FaChevronLeft size={28} />
+          </button>
+          <button
+            type="button"
+            className="image-switch-button image-switch-button-right"
+            aria-label="Next image"
+            onClick={() => onShowNextImage(1)}
+          >
+            <FaChevronRight size={28} />
+          </button>
+        </>
+      )}
       <ImageContainer />
     </dialog>
   );

@@ -144,3 +144,42 @@
     transition-timing-function: ease-out;
   }
 }
+
+.image-switch-button {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  background: rgba(0, 0, 0, 0.6);
+  border: 2px solid white;
+  border-radius: 999px;
+  padding: 0;
+  width: 56px;
+  height: 56px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1001;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  touch-action: manipulation;
+
+  & > svg {
+    color: white;
+  }
+
+  &:focus-visible {
+    outline-color: white;
+  }
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.85);
+  }
+}
+
+.image-switch-button-left {
+  left: 16px;
+}
+
+.image-switch-button-right {
+  right: 16px;
+}
