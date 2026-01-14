@@ -12,6 +12,7 @@
   background: rgba(0, 0, 0, 0);
   overflow: hidden;
   user-select: none;
+  --modal-control-inset: 16px;
 
   &::backdrop {
     width: 100lvw;
@@ -27,7 +28,7 @@
 .close-button {
   position: absolute;
   top: 20px;
-  right: 30px;
+  right: var(--modal-control-inset);
   cursor: pointer;
   background: rgba(0, 0, 0, 0.7);
   border: none;
@@ -152,9 +153,9 @@
 }
 
 .image-switch-button-left {
-  left: 16px;
+  left: var(--modal-control-inset);
 }
 
 .image-switch-button-right {
-  right: 16px;
+  right: var(--modal-control-inset);
 }
