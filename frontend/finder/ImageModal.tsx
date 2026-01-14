@@ -236,7 +236,7 @@ export default function ImageModal() {
             aria-label="Previous image"
             onClick={() => onShowNextImage(-1)}
           >
-            <FaChevronLeft size={28} />
+            <FaChevronLeft size={24} />
           </button>
           <button
             type="button"
@@ -244,7 +244,7 @@ export default function ImageModal() {
             aria-label="Next image"
             onClick={() => onShowNextImage(1)}
           >
-            <FaChevronRight size={28} />
+            <FaChevronRight size={24} />
           </button>
         </>
       )}
