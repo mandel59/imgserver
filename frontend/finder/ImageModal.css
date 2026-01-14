@@ -11,6 +11,7 @@
   margin: auto;
   background: rgba(0, 0, 0, 0);
   overflow: hidden;
+  user-select: none;
 
   &::backdrop {
     width: 100lvw;
@@ -31,6 +32,7 @@
   background: rgba(0, 0, 0, 0.7);
   border: none;
   border-radius: 50%;
+  user-select: none;
   padding: 0;
   width: 50px;
   height: 50px;
@@ -85,6 +87,7 @@
   background: rgba(0, 0, 0, 0.7);
   border: none;
   border-radius: 50%;
+  user-select: none;
   padding: 0;
   width: 50px;
   height: 50px;
@@ -120,12 +123,16 @@
   position: absolute;
   transition-property: opacity;
   transition-duration: 0.12s;
+  user-select: none;
 
   & img {
     max-width: 100%;
     max-height: 100%;
     object-fit: contain;
     pointer-events: auto;
+    user-select: none;
+    -webkit-user-drag: none;
+    -webkit-touch-callout: none;
   }
 
   &.fade-out {
@@ -153,6 +160,7 @@
   background: rgba(0, 0, 0, 0.6);
   border: none;
   border-radius: 999px;
+  user-select: none;
   padding: 0;
   width: 56px;
   height: 56px;
