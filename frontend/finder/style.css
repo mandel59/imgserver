@@ -60,6 +60,7 @@ body {
 
 .file-item {
   all: unset;
+  -webkit-tap-highlight-color: transparent;
   background: var(--card-bg);
   border-radius: 8px;
   overflow: hidden;
@@ -138,6 +139,7 @@ input {
   cursor: pointer;
   font-size: 0.9rem;
   font-family: inherit;
+  -webkit-tap-highlight-color: transparent;
 }
 
 input::placeholder {
