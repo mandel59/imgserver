@@ -79,39 +79,6 @@
   animation: spin 1s ease-in-out infinite;
 }
 
-.close-button {
-  position: absolute;
-  top: 20px;
-  right: 30px;
-  cursor: pointer;
-  background: rgba(0, 0, 0, 0.7);
-  border: none;
-  border-radius: 50%;
-  user-select: none;
-  padding: 0;
-  width: 42px;
-  height: 42px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1002;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-
-  & > svg {
-    color: white;
-    width: 24px;
-    height: 24px;
-  }
-
-  &:focus-visible {
-    outline-color: white;
-  }
-
-  &:hover {
-    background: rgba(40, 40, 40, 0.9);
-  }
-}
-
 .image-container {
   width: 100svw;
   height: 100svh;
