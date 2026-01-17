@@ -66,13 +66,6 @@ const cacheMaxAge
     ? cacheMaxAgeNum
     : 0;
 
-if (!import.meta.dirname.startsWith("/$")) {
-  // FIXME: Change current directory to import.meta.dirname
-  // Probably a bug in Bun, the chunk paths of frontend are incorrect.
-  // Change the current directory to reduce the impact.
-  process.chdir(resolve(import.meta.dirname));
-}
-
 export {
   host,
   port,
