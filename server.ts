@@ -77,7 +77,7 @@ export default function serve() {
           u.pathname = "/";
           // Use a temporary parameter to hold the path value
           u.searchParams.set("path", decodeURIComponent(pathname.slice(1)));
-          return Response.redirect(u);
+          return Response.redirect(u.href.slice(u.origin.length));
         }
       }
     },
