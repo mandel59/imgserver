@@ -22,10 +22,11 @@ test("selectFinderBuildOutputs picks in-memory js and css outputs", () => {
   const outputs = [
     { path: "./index.js", type: "text/javascript;charset=utf-8" },
     { path: "./index.css", type: "text/css;charset=utf-8" },
-  ];
+  ] as const;
+  const [js, css] = outputs;
 
   expect(selectFinderBuildOutputs(outputs)).toEqual({
-    js: outputs[0],
-    css: outputs[1],
+    js,
+    css,
   });
 });

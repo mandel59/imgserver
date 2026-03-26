@@ -31,7 +31,7 @@ export function finderHtml() {
 }
 
 export function selectFinderBuildOutputs<T extends BuildOutputLike>(
-  outputs: T[],
+  outputs: readonly T[],
 ): FinderBuildOutputs<T> {
   const js = outputs.find((output) => output.path.endsWith("/index.js") || output.path === "./index.js");
   const css = outputs.find((output) => output.path.endsWith("/index.css") || output.path === "./index.css");
