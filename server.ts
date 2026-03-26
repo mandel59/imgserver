@@ -100,14 +100,6 @@ async function buildFinderAssets(): Promise<FinderAssets> {
   };
 }
 
-function redirectToRootWithPath(req: Bun.BunRequest) {
-  const u = new URL(req.url);
-  const pathname = u.pathname;
-  u.pathname = "/";
-  u.searchParams.set("path", decodeURIComponent(pathname.slice(1)));
-  return Response.redirect(u.href.slice(u.origin.length));
-}
-
 export default async function serve() {
   console.log(`${name} ${version}`);
   console.log(`Powered by Bun ${Bun.version_with_sha}`);
@@ -138,7 +130,11 @@ export default async function serve() {
       }),
       [finderAssetUrl("favicon.jpeg")]: () => new Response(Bun.file(finderAssets.iconPath)),
       "/*": {
-        GET: (req: Bun.BunRequest) => redirectToRootWithPath(req),
+        GET: () => new Response(finderAssets.html, {
+          headers: {
+            "Content-Type": "text/html; charset=utf-8",
+          },
+        }),
       },
     },
     development,

@@ -29,7 +29,7 @@ export function urlOfLocation(location: LocationState): URL {
 export function locationOfUrl(url: URL): LocationState {
   const searchParams = url.searchParams;
   return {
-    path: decodeURI(url.pathname).slice(1) || searchParams?.get("path") || "",
+    path: decodeURI(url.pathname).slice(1),
     image: searchParams?.get("image") ?? "",
     archive: searchParams?.get("archive") ?? "",
     glob: searchParams?.get("glob") ?? "",
