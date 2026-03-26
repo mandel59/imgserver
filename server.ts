@@ -3,10 +3,14 @@ import { host, port, imagesDir, development } from "./init.ts";
 import Bun from "bun";
 import { name, version } from "./package.json";
 import app from "./backend/app.ts";
-import finder from "./index.html";
+import {
+  finderAssetUrl,
+  finderHtml,
+  selectFinderBuildOutputs,
+} from "./finderAssets.ts";
 import os from "node:os";
 import { isIP } from "node:net";
-import { basename } from "node:path";
+import { fileURLToPath } from "node:url";
 
 function maybeInContainer(host: string) {
   return /^[0-9a-f]{12}$/.test(host);
@@ -31,7 +35,7 @@ function serverHostname() {
       if (/^[0:]*$/.test(h)) {
         return osHostname(`[${h}]`);
       }
-      return `[${h}]`
+      return `[${h}]`;
     case 4:
       if (/^[0\.]*$/.test(h)) {
         return osHostname(h);
@@ -44,7 +48,7 @@ function serverHostname() {
 
 function serverUrl() {
   const u = new URL("http://invalid/");
-  const p = parseInt(port);
+  const p = parseInt(port, 10);
   if (!(0 < p && p <= 0xffff)) {
     throw new Error("Invalid port");
   }
@@ -56,30 +60,86 @@ function serverUrl() {
   return u;
 }
 
-export default function serve() {
+interface FinderAssets {
+  html: string;
+  js: Blob;
+  jsType: string;
+  css: Blob;
+  cssType: string;
+  iconPath: string;
+}
+
+async function buildFinderAssets(): Promise<FinderAssets> {
+  const entrypoint = fileURLToPath(
+    new URL("./frontend/finder/index.tsx", import.meta.url),
+  );
+  const iconPath = fileURLToPath(
+    new URL("./frontend/finder/favicon.jpeg", import.meta.url),
+  );
+
+  const result = await Bun.build({
+    entrypoints: [entrypoint],
+    target: "browser",
+    format: "esm",
+    sourcemap: development ? "inline" : "none",
+    minify: !development,
+  });
+
+  if (!result.success) {
+    throw new AggregateError(result.logs, "Failed to build finder assets");
+  }
+  const outputs = selectFinderBuildOutputs(result.outputs);
+
+  return {
+    html: finderHtml(),
+    js: outputs.js,
+    jsType: outputs.js.type,
+    css: outputs.css,
+    cssType: outputs.css.type,
+    iconPath,
+  };
+}
+
+function redirectToRootWithPath(req: Bun.BunRequest) {
+  const u = new URL(req.url);
+  const pathname = u.pathname;
+  u.pathname = "/";
+  u.searchParams.set("path", decodeURIComponent(pathname.slice(1)));
+  return Response.redirect(u.href.slice(u.origin.length));
+}
+
+export default async function serve() {
   console.log(`${name} ${version}`);
   console.log(`Powered by Bun ${Bun.version_with_sha}`);
   console.log(`Serving images from ${imagesDir}`);
 
   const u = serverUrl();
+  const finderAssets = await buildFinderAssets();
 
   const server = Bun.serve({
     hostname: host,
     port: port,
     routes: {
       "/.be/*": app.fetch,
-      "/": finder,
+      "/": () => new Response(finderAssets.html, {
+        headers: {
+          "Content-Type": "text/html; charset=utf-8",
+        },
+      }),
+      [finderAssetUrl("index.js")]: () => new Response(finderAssets.js, {
+        headers: {
+          "Content-Type": finderAssets.jsType,
+        },
+      }),
+      [finderAssetUrl("index.css")]: () => new Response(finderAssets.css, {
+        headers: {
+          "Content-Type": finderAssets.cssType,
+        },
+      }),
+      [finderAssetUrl("favicon.jpeg")]: () => new Response(Bun.file(finderAssets.iconPath)),
       "/*": {
-        // Bun's SPA support is limited, so redirect to root first.
-        GET: (req: Bun.BunRequest) => {
-          const u = new URL(req.url);
-          const pathname = u.pathname;
-          u.pathname = "/";
-          // Use a temporary parameter to hold the path value
-          u.searchParams.set("path", decodeURIComponent(pathname.slice(1)));
-          return Response.redirect(u.href.slice(u.origin.length));
-        }
-      }
+        GET: (req: Bun.BunRequest) => redirectToRootWithPath(req),
+      },
     },
     development,
   });
