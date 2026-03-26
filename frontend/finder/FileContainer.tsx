@@ -126,7 +126,16 @@ export function ImageIcon({
     }
   };
 
-  const url = imageResourceUrl(file.path);
+  const thumbnailUrl = imageResourceUrl(file.path, {
+    archive: file.archive,
+    height,
+    format: "webp",
+  });
+  const thumbnailUrl2x = imageResourceUrl(file.path, {
+    archive: file.archive,
+    height: height * 2,
+    format: "webp",
+  });
 
   const handleClick = (e: React.MouseEvent) => {
     if (e.button === 0 && !(e.metaKey || e.altKey || e.ctrlKey || e.shiftKey)) {
@@ -161,10 +170,8 @@ export function ImageIcon({
     >
       <img
         loading="lazy"
-        src={`${url}?archive=${file.archive}&height=${height}&format=webp`}
-        srcSet={`${url}?archive=${file.archive}&height=${
-          height * 2
-        }&format=webp 2x`}
+        src={thumbnailUrl}
+        srcSet={`${thumbnailUrl2x} 2x`}
         style={{
           width: `100%`,
           height: `100%`,

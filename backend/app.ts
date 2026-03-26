@@ -35,6 +35,14 @@ const archiveExtensions = [
 
 const app = new Hono();
 
+function decodeImageRequestPath(path: string) {
+  try {
+    return decodeURIComponent(path);
+  } catch {
+    return null;
+  }
+}
+
 if (loggingPath) {
   // アクセスログミドルウェア
   app.use(loggingPath, logger());
@@ -51,8 +59,13 @@ if (corsOrigin.length > 0) {
 // 画像ファイル配信 (エラーハンドリング強化版)
 app.get("/.be/images/*", etag(), async (c) => {
   const { archive = "", encoding = "shift_jis" } = c.req.query();
+  const rawPath = c.req.path.replace(/^\/\.be\/images\//, "");
+  const path = decodeImageRequestPath(rawPath);
 
-  const path = c.req.path.replace(/^\/\.be\/images\//, "");
+  if (path == null) {
+    console.error(`Invalid encoded path attempt: ${rawPath}`);
+    return c.json({ error: "File not found" }, 404);
+  }
 
   // セキュリティチェックと隠しファイルチェック
   if (
