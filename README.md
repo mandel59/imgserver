@@ -83,11 +83,13 @@ dir = "./images"
 logging = "/.be/api/*"
 development = true
 keepMetadata = false
+showMetadata = false
 corsOrigin = ["https://example.com"]
 cacheMaxAge = 300
 ```
 
 `dir` は設定ファイルの場所からの相対パスとして解決されます。CLI の `--dir` は従来どおりカレントディレクトリ基準です。
+画像モーダルでメタデータを表示する場合は `showMetadata = true` または `--showMetadata` を指定します。
 
 ## License
 

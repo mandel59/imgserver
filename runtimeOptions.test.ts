@@ -20,6 +20,7 @@ test("loads runtime options from config file", async () => {
         'logging = "/.be/api/*"',
         "development = true",
         "keepMetadata = true",
+        "showMetadata = true",
         'corsOrigin = ["https://example.com", "https://example.org"]',
         "cacheMaxAge = 300",
       ].join("\n"),
@@ -34,6 +35,7 @@ test("loads runtime options from config file", async () => {
     expect(options.loggingPath).toBe("/.be/api/*");
     expect(options.development).toBe(true);
     expect(options.keepMetadata).toBe(true);
+    expect(options.showMetadata).toBe(true);
     expect(options.corsOrigin).toEqual([
       "https://example.com",
       "https://example.org",
@@ -57,6 +59,7 @@ test("cli arguments override config file values", async () => {
         'dir: "./from-config"',
         "development: true",
         "keepMetadata: true",
+        "showMetadata: true",
         'corsOrigin: ["https://example.com"]',
         "cacheMaxAge: 300",
       ].join("\n"),
@@ -74,6 +77,7 @@ test("cli arguments override config file values", async () => {
         "./from-cli",
         "--no-development",
         "--no-keepMetadata",
+        "--no-showMetadata",
         "--corsOrigin",
         "https://cli.example",
         "--cacheMaxAge",
@@ -87,6 +91,7 @@ test("cli arguments override config file values", async () => {
     expect(options.imagesDir).toBe(join(baseDir, "from-cli"));
     expect(options.development).toBe(false);
     expect(options.keepMetadata).toBe(false);
+    expect(options.showMetadata).toBe(false);
     expect(options.corsOrigin).toEqual(["https://cli.example"]);
     expect(options.cacheMaxAge).toBe(15);
   } finally {

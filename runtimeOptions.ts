@@ -28,6 +28,9 @@ const optionDefinitions = {
   keepMetadata: {
     type: "boolean",
   },
+  showMetadata: {
+    type: "boolean",
+  },
   corsOrigin: {
     type: "string",
     multiple: true,
@@ -43,6 +46,7 @@ const defaultOptionValues = {
   dir: ".",
   development: false,
   keepMetadata: false,
+  showMetadata: false,
   corsOrigin: [] as string[],
   cacheMaxAge: "60",
 } as const;
@@ -54,6 +58,7 @@ interface NormalizedConfigValues {
   logging?: string;
   development?: boolean;
   keepMetadata?: boolean;
+  showMetadata?: boolean;
   corsOrigin?: string[];
   cacheMaxAge?: string;
 }
@@ -67,6 +72,7 @@ export interface RuntimeOptions {
   development: boolean;
   positionals: string[];
   keepMetadata: boolean;
+  showMetadata: boolean;
   corsOrigin: string[];
   cacheMaxAge: number;
 }
@@ -187,6 +193,9 @@ function loadConfigValues(configPath: string): NormalizedConfigValues {
   if (Object.hasOwn(raw, "keepMetadata")) {
     values.keepMetadata = expectBoolean(raw.keepMetadata, configPath, "keepMetadata");
   }
+  if (Object.hasOwn(raw, "showMetadata")) {
+    values.showMetadata = expectBoolean(raw.showMetadata, configPath, "showMetadata");
+  }
   if (Object.hasOwn(raw, "corsOrigin")) {
     values.corsOrigin = expectStringArray(raw.corsOrigin, configPath, "corsOrigin");
   }
@@ -243,6 +252,9 @@ export function resolveRuntimeOptions(
     keepMetadata: values.keepMetadata
       ?? configValues.keepMetadata
       ?? defaultOptionValues.keepMetadata,
+    showMetadata: values.showMetadata
+      ?? configValues.showMetadata
+      ?? defaultOptionValues.showMetadata,
     corsOrigin: values.corsOrigin
       ?? configValues.corsOrigin
       ?? defaultOptionValues.corsOrigin,

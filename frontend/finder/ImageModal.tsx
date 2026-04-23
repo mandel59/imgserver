@@ -1,7 +1,7 @@
 import { useAtom, useAtomValue, useStore } from "jotai";
 import React, { useEffect, useCallback, useRef, useState } from "react";
 import { useSwipeable } from "react-swipeable";
-import { FaChevronLeft, FaChevronRight, FaTimes } from "react-icons/fa";
+import { FaChevronLeft, FaChevronRight, FaInfo, FaTimes } from "react-icons/fa";
 import "./ImageModal.css";
 
 import {
@@ -14,6 +14,8 @@ import {
 } from "./states/image.ts";
 import { currentArchiveAtom } from "./states/location.ts";
 import { imageResourceUrl, imageResourceUrlForFileItem } from "./resources.ts";
+import { fetchImageMetadata, fetchRuntimeOptions } from "./api.ts";
+import type { ImageMetadata, RuntimeFeatureOptions } from "@/common/types.ts";
 
 export function CloseButton({ closeModal }: { closeModal: () => void }) {
   return (
@@ -115,13 +117,146 @@ export function ImageContainer() {
   );
 }
 
+function formatBytes(size: number) {
+  if (size < 1024) {
+    return `${size} B`;
+  }
+  const units = ["KB", "MB", "GB"];
+  let value = size / 1024;
+  for (const unit of units) {
+    if (value < 1024 || unit === units[units.length - 1]) {
+      return `${value.toFixed(value < 10 ? 1 : 0)} ${unit}`;
+    }
+    value /= 1024;
+  }
+  return `${size} B`;
+}
+
+function formatDate(timestamp: number) {
+  if (timestamp <= 0) {
+    return "Unknown";
+  }
+  return new Date(timestamp).toLocaleString();
+}
+
+function MetadataPanel({
+  metadata,
+  error,
+  isLoading,
+}: {
+  metadata: ImageMetadata | null;
+  error: string | null;
+  isLoading: boolean;
+}) {
+  const rows = metadata
+    ? [
+        ["Name", metadata.name],
+        ["Format", metadata.format?.toUpperCase()],
+        [
+          "Dimensions",
+          metadata.width && metadata.height
+            ? `${metadata.width} x ${metadata.height}`
+            : undefined,
+        ],
+        ["Size", formatBytes(metadata.size)],
+        ["Modified", formatDate(metadata.modified)],
+        ["Color space", metadata.space],
+        ["Channels", metadata.channels?.toString()],
+        ["Depth", metadata.depth],
+        ["Alpha", metadata.hasAlpha == null ? undefined : metadata.hasAlpha ? "Yes" : "No"],
+        ["Orientation", metadata.orientation?.toString()],
+        ["Pages", metadata.pages?.toString()],
+      ].filter((row): row is [string, string] => Boolean(row[1]))
+    : [];
+
+  return (
+    <aside className="metadata-panel" aria-label="Image metadata">
+      {isLoading && <p className="metadata-status">Loading...</p>}
+      {error && <p className="metadata-status">{error}</p>}
+      {!isLoading && !error && metadata && (
+        <dl>
+          {rows.map(([label, value]) => (
+            <React.Fragment key={label}>
+              <dt>{label}</dt>
+              <dd>{value}</dd>
+            </React.Fragment>
+          ))}
+        </dl>
+      )}
+    </aside>
+  );
+}
+
 export default function ImageModal() {
   const store = useStore();
   const [isImageModalOpen, setIsModalOpen] = useAtom(isImageModalOpenAtom);
   const [, onShowNextImage] = useAtom(onShowNextImageAtom);
   const images = useAtomValue(currentImagesAtom);
   const selectedImageIndex = useAtomValue(selectedImageIndexAtom);
+  const selectedImagePath = useAtomValue(selectedImagePathAtom);
+  const archive = useAtomValue(currentArchiveAtom);
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const [runtimeOptions, setRuntimeOptions] =
+    useState<RuntimeFeatureOptions | null>(null);
+  const [isMetadataOpen, setIsMetadataOpen] = useState(false);
+  const [metadata, setMetadata] = useState<ImageMetadata | null>(null);
+  const [metadataError, setMetadataError] = useState<string | null>(null);
+  const [isMetadataLoading, setIsMetadataLoading] = useState(false);
+
+  useEffect(() => {
+    let ignore = false;
+    fetchRuntimeOptions()
+      .then((options) => {
+        if (!ignore) {
+          setRuntimeOptions(options);
+        }
+      })
+      .catch(() => {
+        if (!ignore) {
+          setRuntimeOptions({ showMetadata: false });
+        }
+      });
+    return () => {
+      ignore = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    setIsMetadataOpen(false);
+    setMetadata(null);
+    setMetadataError(null);
+  }, [selectedImagePath, archive]);
+
+  useEffect(() => {
+    if (!runtimeOptions?.showMetadata || !isMetadataOpen || !selectedImagePath) {
+      return;
+    }
+
+    let ignore = false;
+    setIsMetadataLoading(true);
+    setMetadataError(null);
+    fetchImageMetadata(selectedImagePath, archive)
+      .then((nextMetadata) => {
+        if (!ignore) {
+          setMetadata(nextMetadata);
+        }
+      })
+      .catch(() => {
+        if (!ignore) {
+          setMetadataError("Metadata unavailable");
+          setMetadata(null);
+        }
+      })
+      .finally(() => {
+        if (!ignore) {
+          setIsMetadataLoading(false);
+        }
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, [runtimeOptions?.showMetadata, isMetadataOpen, selectedImagePath, archive]);
 
   // react-swipeableでスワイプ操作を設定
   const swipeHandlers = useSwipeable({
@@ -218,6 +353,7 @@ export default function ImageModal() {
 
   const showSwitchButtons =
     isImageModalOpen && selectedImageIndex !== undefined && images.length > 1;
+  const showMetadataButton = isImageModalOpen && runtimeOptions?.showMetadata;
 
   return (
     <dialog
@@ -228,6 +364,17 @@ export default function ImageModal() {
       onClose={closeModal}
     >
       <CloseButton closeModal={closeModal} />
+      {showMetadataButton && (
+        <button
+          type="button"
+          className="metadata-button"
+          aria-label="Show image metadata"
+          aria-pressed={isMetadataOpen}
+          onClick={() => setIsMetadataOpen((open) => !open)}
+        >
+          <FaInfo size={18} />
+        </button>
+      )}
       {showSwitchButtons && (
         <>
           <button
@@ -249,6 +396,13 @@ export default function ImageModal() {
         </>
       )}
       <ImageContainer />
+      {showMetadataButton && isMetadataOpen && (
+        <MetadataPanel
+          metadata={metadata}
+          error={metadataError}
+          isLoading={isMetadataLoading}
+        />
+      )}
     </dialog>
   );
 }

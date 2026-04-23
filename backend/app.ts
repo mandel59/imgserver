@@ -2,6 +2,7 @@ import {
   imagesDir,
   loggingPath,
   keepMetadata,
+  showMetadata,
   corsOrigin,
   cacheMaxAge,
 } from "../init.ts";
@@ -16,7 +17,7 @@ import { readdir, stat } from "node:fs/promises";
 import sharp from "sharp";
 import AdbZip from "adm-zip";
 import iconv from "iconv-lite";
-import type { FileItem } from "@/common/types";
+import type { FileItem, ImageMetadata, RuntimeFeatureOptions } from "@/common/types";
 
 const imageExtensions = [
   ".jpg",
@@ -41,6 +42,56 @@ function decodeImageRequestPath(path: string) {
   } catch {
     return null;
   }
+}
+
+function isInvalidImagePath(path: string) {
+  return (
+    path.includes("\0") ||
+    path.includes("\\") ||
+    path.split("/").some((part: string) => part.startsWith(".") || part.length === 0)
+  );
+}
+
+function resolveArchiveKey(path: string, archive: string) {
+  if (!path.startsWith(archive)) {
+    return null;
+  }
+
+  if (path === archive) {
+    return "";
+  }
+
+  if (path[archive.length] !== "/") {
+    return null;
+  }
+
+  return path.slice(archive.length + 1);
+}
+
+function toImageMetadata(
+  path: string,
+  archive: string,
+  size: number,
+  modified: number,
+  metadata: sharp.Metadata,
+): ImageMetadata {
+  return {
+    path,
+    archive,
+    name: basename(path),
+    format: metadata.format,
+    width: metadata.width,
+    height: metadata.height,
+    space: metadata.space,
+    channels: metadata.channels,
+    depth: metadata.depth,
+    density: metadata.density,
+    hasAlpha: metadata.hasAlpha,
+    orientation: metadata.orientation,
+    pages: metadata.pages,
+    size,
+    modified,
+  };
 }
 
 if (loggingPath) {
@@ -69,9 +120,7 @@ app.get("/.be/images/*", etag(), async (c) => {
 
   // セキュリティチェックと隠しファイルチェック
   if (
-    path.includes("\0") ||
-    path.includes("\\") ||
-    path.split("/").some((part: string) => part.startsWith(".") || part.length === 0)
+    isInvalidImagePath(path)
   ) {
     console.error(`Invalid path attempt: ${path}`);
     return c.json({ error: "File not found" }, 404);
@@ -82,20 +131,10 @@ app.get("/.be/images/*", etag(), async (c) => {
   let mtime: number = 0;
   let fileSize: number = 0;
   if (archive) {
-    if (!path.startsWith(archive)) {
+    const key = resolveArchiveKey(path, archive);
+    if (key == null) {
       console.error(`Invalid path attempt: ${path}`);
       return c.json({ error: "File not found" }, 404);
-    }
-
-    let key: string
-    if (path === archive) {
-      key = '';
-    } else {
-      if (path[archive.length] !== '/') {
-        console.error(`Invalid path attempt: ${path}`);
-        return c.json({ error: "File not found" }, 404);
-      }
-      key = path.slice(archive.length + 1);
     }
 
     const archivePath = join(imagesDir, archive);
@@ -272,6 +311,81 @@ app.get("/.be/images/*", etag(), async (c) => {
   }
 });
 
+app.get("/.be/api/runtime-options", (c) => {
+  const options: RuntimeFeatureOptions = {
+    showMetadata,
+  };
+  return c.json(options);
+});
+
+app.get("/.be/api/image-metadata", async (c) => {
+  if (!showMetadata) {
+    return c.json({ error: "File not found" }, 404);
+  }
+
+  const { path = "", archive = "", encoding = "shift_jis" } = c.req.query();
+
+  if (path === "" || isInvalidImagePath(path)) {
+    console.error(`Invalid path attempt: ${path}`);
+    return c.json({ error: "File not found" }, 404);
+  }
+
+  try {
+    if (archive) {
+      const key = resolveArchiveKey(path, archive);
+      if (key == null) {
+        console.error(`Invalid path attempt: ${path}`);
+        return c.json({ error: "File not found" }, 404);
+      }
+
+      const archivePath = join(imagesDir, archive);
+      const zip = new AdbZip(archivePath);
+      const rawKey = iconv.encode(key, encoding).toString("utf-8");
+      const header = zip.getEntry(rawKey)?.header ?? null;
+      const buffer = zip.readFile(rawKey) ?? null;
+      if (!header || !buffer) {
+        return c.json({ error: "File not found" }, 404);
+      }
+
+      const metadata = await sharp(buffer, {}).metadata();
+      return c.json(
+        toImageMetadata(
+          path,
+          archive,
+          header.size,
+          header.time?.getTime() ?? 0,
+          metadata,
+        ),
+      );
+    }
+
+    const filePath = join(imagesDir, path);
+    const fileInfo = await stat(filePath);
+    if (!fileInfo.isFile()) {
+      console.error(`Not a regular file: ${filePath}`);
+      return c.json({ error: "File not found" }, 404);
+    }
+
+    const metadata = await sharp(filePath).metadata();
+    return c.json(
+      toImageMetadata(path, archive, fileInfo.size, fileInfo.mtime.getTime(), metadata),
+    );
+  } catch (err) {
+    if (
+      (err as any)?.code == "ENOENT" ||
+      (err as any)?.message?.startsWith("Input file is missing")
+    ) {
+      return c.json({ error: "File not found" }, 404);
+    }
+    console.error(
+      `Error processing image-metadata request for ${path}:`,
+      err?.constructor,
+      err
+    );
+    return c.json({ error: "Internal server error" }, 500);
+  }
+});
+
 // ファイル一覧取得API
 app.get("/.be/api/list-files", async (c) => {
   const { sort = "name", path = "", archive = "", encoding = "shift_jis" } = c.req.query();
@@ -287,20 +401,10 @@ app.get("/.be/api/list-files", async (c) => {
   }
 
   if (archive) {
-    if (!path.startsWith(archive)) {
+    const key = resolveArchiveKey(path, archive);
+    if (key == null) {
       console.error(`Invalid path attempt: ${path}`);
       return c.json({ exists: false, files: [] });
-    }
-
-    let key: string
-    if (path === archive) {
-      key = '';
-    } else {
-      if (path[archive.length] !== '/') {
-        console.error(`Invalid path attempt: ${path}`);
-        return c.json({ exists: false, files: [] });
-      }
-      key = path.slice(archive.length + 1);
     }
 
     const archivePath = join(imagesDir, archive);

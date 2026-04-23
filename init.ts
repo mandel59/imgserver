@@ -10,6 +10,7 @@ const {
   development,
   positionals,
   keepMetadata,
+  showMetadata,
   corsOrigin,
   cacheMaxAge,
 } = resolveRuntimeOptions(process.argv.slice(2));
@@ -23,6 +24,7 @@ export {
   development,
   positionals,
   keepMetadata,
+  showMetadata,
   corsOrigin,
   cacheMaxAge,
 };

@@ -58,6 +58,82 @@
   }
 }
 
+.metadata-button {
+  position: absolute;
+  top: 72px;
+  right: var(--modal-control-inset);
+  cursor: pointer;
+  background: rgba(0, 0, 0, 0.7);
+  border: none;
+  border-radius: 50%;
+  user-select: none;
+  padding: 0;
+  width: 42px;
+  height: 42px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1002;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  touch-action: manipulation;
+
+  & > svg {
+    color: white;
+  }
+
+  &:focus-visible {
+    outline-color: white;
+  }
+
+  &:hover,
+  &[aria-pressed="true"] {
+    background: rgba(40, 40, 40, 0.95);
+  }
+}
+
+.metadata-panel {
+  position: absolute;
+  top: 124px;
+  right: var(--modal-control-inset);
+  z-index: 1002;
+  width: min(320px, calc(100svw - 32px));
+  max-height: calc(100svh - 148px);
+  overflow: auto;
+  box-sizing: border-box;
+  padding: 14px 16px;
+  border-radius: 8px;
+  background: rgba(12, 12, 12, 0.88);
+  color: white;
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.45);
+  user-select: text;
+
+  & dl {
+    display: grid;
+    grid-template-columns: minmax(84px, max-content) minmax(0, 1fr);
+    gap: 8px 14px;
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.35;
+  }
+
+  & dt {
+    color: rgba(255, 255, 255, 0.64);
+  }
+
+  & dd {
+    min-width: 0;
+    margin: 0;
+    overflow-wrap: anywhere;
+  }
+}
+
+.metadata-status {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
 .loading-indicator {
   position: absolute;
   top: 0;
