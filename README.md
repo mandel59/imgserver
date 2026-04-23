@@ -13,6 +13,12 @@ BunとHonoを使用した画像表示Webサーバーです。指定したディ�
 npx github:mandel59/imgserver --dir /path/to/images
 ```
 
+設定ファイルを使う場合は `--config` を指定します。
+
+```bash
+npx github:mandel59/imgserver --config ./imgserver.toml
+```
+
 ## Features
 - 画像ディレクトリの指定可能
 - Reactベースの画像ビューア
@@ -64,6 +70,24 @@ bun dev
 ```bash
 bun dev --dir /path/to/images
 ```
+
+### Config file
+
+`--config` では `.json` / `.jsonc` / `.toml` / `.yaml` / `.yml` を指定できます。
+設定値の優先順位は `コマンド引数 > 設定ファイル > 既定値` です。
+
+```toml
+host = "0.0.0.0"
+port = 8000
+dir = "./images"
+logging = "/.be/api/*"
+development = true
+keepMetadata = false
+corsOrigin = ["https://example.com"]
+cacheMaxAge = 300
+```
+
+`dir` は設定ファイルの場所からの相対パスとして解決されます。CLI の `--dir` は従来どおりカレントディレクトリ基準です。
 
 ## License
 

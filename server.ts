@@ -1,4 +1,4 @@
-import { host, port, imagesDir, development } from "./init.ts";
+import { configPath, host, port, imagesDir, development } from "./init.ts";
 
 import Bun from "bun";
 import { name, version } from "./package.json";
@@ -103,6 +103,9 @@ async function buildFinderAssets(): Promise<FinderAssets> {
 export default async function serve() {
   console.log(`${name} ${version}`);
   console.log(`Powered by Bun ${Bun.version_with_sha}`);
+  if (configPath) {
+    console.log(`Using config file ${configPath}`);
+  }
   console.log(`Serving images from ${imagesDir}`);
 
   const u = serverUrl();
