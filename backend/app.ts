@@ -367,7 +367,7 @@ app.get("/.be/images/*", etag(), async (c) => {
       const fileInfo = await stat(filePath);
 
       // 通常ファイルでない場合は404エラー
-      if (!fileInfo.isFile) {
+      if (!fileInfo.isFile()) {
         console.error(`Not a regular file: ${filePath}`);
         return c.json({ error: "File not found" }, 404);
       }

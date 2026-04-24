@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, expect, test } from "bun:test";
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import sharp from "sharp";
@@ -80,6 +80,7 @@ beforeAll(async () => {
       createPngTextChunk("Comment", commentText),
     ),
   );
+  await mkdir(join(tempDir, "image-dir"));
 
   process.argv = ["bun", "test", "--dir", tempDir, "--showMetadata"];
   ({ default: app } = await import("./app.ts"));
@@ -103,6 +104,14 @@ test("serves url-encoded image paths", async () => {
 test("rejects malformed encoded image paths", async () => {
   const response = await app.fetch(
     new Request("http://localhost/.be/images/test%ZZimg.png"),
+  );
+
+  expect(response.status).toBe(404);
+});
+
+test("returns 404 for directory image paths", async () => {
+  const response = await app.fetch(
+    new Request("http://localhost/.be/images/image-dir"),
   );
 
   expect(response.status).toBe(404);
