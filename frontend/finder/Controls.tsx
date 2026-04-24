@@ -48,6 +48,55 @@ const thumbnailSizeOptions: { value: ThumbnailSize; label: string }[] = [
   { value: "large", label: "大" },
 ];
 
+type ScrollAnchor = {
+  fileName: string;
+  top: number;
+};
+
+function currentFileScrollAnchor(): ScrollAnchor | null {
+  const headerBottom =
+    document.querySelector<HTMLElement>(".header-container")
+      ?.getBoundingClientRect().bottom ?? 0;
+  const targetTop = headerBottom + 12;
+  const items = Array.from(
+    document.querySelectorAll<HTMLElement>(".file-item")
+  );
+  const visibleItems = items.filter((item) => {
+    const rect = item.getBoundingClientRect();
+    return rect.bottom > targetTop && rect.top < window.innerHeight;
+  });
+  const anchor =
+    visibleItems
+      .map((item) => {
+        const rect = item.getBoundingClientRect();
+        return { item, rect, distance: Math.abs(rect.top - targetTop) };
+      })
+      .sort((a, b) => a.distance - b.distance)[0] ?? null;
+  const fileName = anchor?.item.dataset.fileName;
+  if (!anchor || !fileName) return null;
+
+  return {
+    fileName,
+    top: anchor.rect.top,
+  };
+}
+
+function restoreFileScrollAnchor(anchor: ScrollAnchor | null) {
+  if (!anchor) return;
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      const item = Array.from(
+        document.querySelectorAll<HTMLElement>(".file-item")
+      ).find((item) => item.dataset.fileName === anchor.fileName);
+      if (!item) return;
+
+      const nextTop = item.getBoundingClientRect().top;
+      window.scrollBy(0, nextTop - anchor.top);
+    });
+  });
+}
+
 export default function Controls() {
   const [sortOption, setSortOption] = useAtom(sortOptionAtom);
   const [sortOrder, setSortOrder] = useAtom(sortOrderAtom);
@@ -290,7 +339,13 @@ export default function Controls() {
                     key={option.value}
                     type="button"
                     className={thumbnailSize === option.value ? "active" : ""}
-                    onClick={() => setThumbnailSize(option.value)}
+                    onClick={() => {
+                      if (thumbnailSize === option.value) return;
+
+                      const anchor = currentFileScrollAnchor();
+                      setThumbnailSize(option.value);
+                      restoreFileScrollAnchor(anchor);
+                    }}
                     aria-pressed={thumbnailSize === option.value}
                   >
                     {option.label}
