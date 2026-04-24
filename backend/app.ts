@@ -13,11 +13,17 @@ import { etag } from "hono/etag";
 import { stream } from "hono/streaming";
 import { cors } from "hono/cors";
 import { join, extname, basename, dirname } from "node:path/posix";
-import { readdir, stat } from "node:fs/promises";
+import { readFile, readdir, stat } from "node:fs/promises";
+import { inflateSync } from "node:zlib";
 import sharp from "sharp";
 import AdbZip from "adm-zip";
 import iconv from "iconv-lite";
-import type { FileItem, ImageMetadata, RuntimeFeatureOptions } from "@/common/types";
+import type {
+  FileItem,
+  ImageMetadata,
+  MetadataTextEntry,
+  RuntimeFeatureOptions,
+} from "@/common/types";
 
 const imageExtensions = [
   ".jpg",
@@ -33,6 +39,10 @@ const imageExtensions = [
 const archiveExtensions = [
   ".zip",
 ];
+
+const maxMetadataTextLength = 16 * 1024;
+const maxInflatedMetadataTextLength = 256 * 1024;
+const pngSignature = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 
 const app = new Hono();
 
@@ -68,14 +78,207 @@ function resolveArchiveKey(path: string, archive: string) {
   return path.slice(archive.length + 1);
 }
 
+function createMetadataTextEntry(
+  kind: MetadataTextEntry["kind"],
+  label: string,
+  value: string,
+): MetadataTextEntry {
+  const truncated = value.length > maxMetadataTextLength;
+  return {
+    kind,
+    label,
+    value: truncated ? value.slice(0, maxMetadataTextLength) : value,
+    valueLength: value.length,
+    truncated,
+  };
+}
+
+function createMetadataTextEntryFromBuffer(
+  kind: MetadataTextEntry["kind"],
+  label: string,
+  value: Buffer,
+  encoding: BufferEncoding,
+): MetadataTextEntry {
+  const truncated = value.length > maxMetadataTextLength;
+  return {
+    kind,
+    label,
+    value: value.subarray(0, maxMetadataTextLength).toString(encoding),
+    valueLength: value.length,
+    truncated,
+  };
+}
+
+type PngTextEntryOptions =
+  Pick<MetadataTextEntry, "compressed" | "language" | "translatedLabel"> & {
+    encoding?: BufferEncoding;
+  };
+
+function createPngTextEntry(
+  label: string,
+  value: string | Buffer,
+  options: PngTextEntryOptions = {},
+) {
+  const { encoding = "utf8", ...entryOptions } = options;
+  const entry = Buffer.isBuffer(value)
+    ? createMetadataTextEntryFromBuffer(
+      "png-comment",
+      label || "Comment",
+      value,
+      encoding,
+    )
+    : createMetadataTextEntry("png-comment", label || "Comment", value);
+  return {
+    ...entry,
+    ...entryOptions,
+  };
+}
+
+function splitPngKeyword(data: Buffer) {
+  const keywordEnd = data.indexOf(0);
+  if (keywordEnd <= 0) {
+    return null;
+  }
+  return {
+    keyword: data.subarray(0, keywordEnd).toString("latin1"),
+    restOffset: keywordEnd + 1,
+  };
+}
+
+function inflatePngText(data: Buffer) {
+  return inflateSync(data, { maxOutputLength: maxInflatedMetadataTextLength });
+}
+
+function parsePngTextEntries(buffer: Buffer): MetadataTextEntry[] {
+  if (buffer.length < pngSignature.length || !buffer.subarray(0, 8).equals(pngSignature)) {
+    return [];
+  }
+
+  const entries: MetadataTextEntry[] = [];
+  let offset = pngSignature.length;
+
+  while (offset + 12 <= buffer.length) {
+    const length = buffer.readUInt32BE(offset);
+    const typeStart = offset + 4;
+    const dataStart = offset + 8;
+    const dataEnd = dataStart + length;
+    const nextOffset = dataEnd + 4;
+    if (dataEnd > buffer.length || nextOffset > buffer.length) {
+      break;
+    }
+
+    const type = buffer.subarray(typeStart, typeStart + 4).toString("ascii");
+    const data = buffer.subarray(dataStart, dataEnd);
+
+    try {
+      switch (type) {
+        case "tEXt": {
+          const split = splitPngKeyword(data);
+          if (split) {
+            entries.push(
+              createPngTextEntry(
+                split.keyword,
+                data.subarray(split.restOffset),
+                { encoding: "latin1" },
+              ),
+            );
+          }
+          break;
+        }
+        case "zTXt": {
+          const split = splitPngKeyword(data);
+          if (split && data[split.restOffset] === 0) {
+            entries.push(
+              createPngTextEntry(
+                split.keyword,
+                inflatePngText(data.subarray(split.restOffset + 1)),
+                { compressed: true, encoding: "latin1" },
+              ),
+            );
+          }
+          break;
+        }
+        case "iTXt": {
+          const split = splitPngKeyword(data);
+          if (!split) {
+            break;
+          }
+          const compressionFlag = data[split.restOffset];
+          const compressionMethod = data[split.restOffset + 1];
+          if (
+            (compressionFlag !== 0 && compressionFlag !== 1) ||
+            (compressionFlag === 1 && compressionMethod !== 0)
+          ) {
+            break;
+          }
+          let cursor = split.restOffset + 2;
+          const languageEnd = data.indexOf(0, cursor);
+          if (languageEnd === -1) {
+            break;
+          }
+          const language = data.subarray(cursor, languageEnd).toString("ascii");
+          cursor = languageEnd + 1;
+          const translatedKeywordEnd = data.indexOf(0, cursor);
+          if (translatedKeywordEnd === -1) {
+            break;
+          }
+          const translatedLabel = data.subarray(cursor, translatedKeywordEnd).toString("utf8");
+          const textBuffer = data.subarray(translatedKeywordEnd + 1);
+          const value = compressionFlag === 1
+            ? inflatePngText(textBuffer)
+            : textBuffer;
+          entries.push(
+            createPngTextEntry(split.keyword, value, {
+              compressed: compressionFlag === 1,
+              encoding: "utf8",
+              language: language || undefined,
+              translatedLabel: translatedLabel || undefined,
+            }),
+          );
+          break;
+        }
+      }
+    } catch {
+      // Skip malformed text chunks and continue reading other metadata.
+    }
+
+    offset = nextOffset;
+  }
+
+  return entries;
+}
+
+function getMetadataTextEntries(
+  metadata: sharp.Metadata,
+  inputBuffer?: Buffer,
+): MetadataTextEntry[] {
+  const entries = inputBuffer
+    ? parsePngTextEntries(inputBuffer)
+    : metadata.comments?.map((comment) => {
+      return createMetadataTextEntry(
+        "png-comment",
+        comment.keyword || "Comment",
+        comment.text,
+      );
+    }) ?? [];
+
+  if (metadata.xmpAsString) {
+    entries.push(createMetadataTextEntry("xmp", "XMP", metadata.xmpAsString));
+  }
+
+  return entries;
+}
+
 function toImageMetadata(
   path: string,
   archive: string,
   size: number,
   modified: number,
   metadata: sharp.Metadata,
+  inputBuffer?: Buffer,
 ): ImageMetadata {
-  return {
+  const textEntries = getMetadataTextEntries(metadata, inputBuffer);
+  const result: ImageMetadata = {
     path,
     archive,
     name: basename(path),
@@ -92,6 +295,12 @@ function toImageMetadata(
     size,
     modified,
   };
+
+  if (textEntries.length > 0) {
+    result.textEntries = textEntries;
+  }
+
+  return result;
 }
 
 if (loggingPath) {
@@ -355,6 +564,7 @@ app.get("/.be/api/image-metadata", async (c) => {
           header.size,
           header.time?.getTime() ?? 0,
           metadata,
+          buffer,
         ),
       );
     }
@@ -366,9 +576,21 @@ app.get("/.be/api/image-metadata", async (c) => {
       return c.json({ error: "File not found" }, 404);
     }
 
-    const metadata = await sharp(filePath).metadata();
+    const pngBuffer = extname(path).toLowerCase() === ".png"
+      ? await readFile(filePath)
+      : undefined;
+    const metadata = pngBuffer
+      ? await sharp(pngBuffer, {}).metadata()
+      : await sharp(filePath).metadata();
     return c.json(
-      toImageMetadata(path, archive, fileInfo.size, fileInfo.mtime.getTime(), metadata),
+      toImageMetadata(
+        path,
+        archive,
+        fileInfo.size,
+        fileInfo.mtime.getTime(),
+        metadata,
+        pngBuffer,
+      ),
     );
   } catch (err) {
     if (

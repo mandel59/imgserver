@@ -14,6 +14,17 @@ export type RuntimeFeatureOptions = {
   showMetadata: boolean;
 };
 
+export type MetadataTextEntry = {
+  kind: "png-comment" | "xmp";
+  label: string;
+  value: string;
+  valueLength: number;
+  truncated: boolean;
+  compressed?: boolean;
+  language?: string;
+  translatedLabel?: string;
+};
+
 export type ImageMetadata = {
   path: string;
   archive: string;
@@ -30,4 +41,5 @@ export type ImageMetadata = {
   pages?: number;
   size: number;
   modified: number;
+  textEntries?: MetadataTextEntry[];
 };

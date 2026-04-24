@@ -15,7 +15,11 @@ import {
 import { currentArchiveAtom } from "./states/location.ts";
 import { imageResourceUrl, imageResourceUrlForFileItem } from "./resources.ts";
 import { fetchImageMetadata, fetchRuntimeOptions } from "./api.ts";
-import type { ImageMetadata, RuntimeFeatureOptions } from "@/common/types.ts";
+import type {
+  ImageMetadata,
+  MetadataTextEntry,
+  RuntimeFeatureOptions,
+} from "@/common/types.ts";
 
 export function CloseButton({ closeModal }: { closeModal: () => void }) {
   return (
@@ -139,6 +143,36 @@ function formatDate(timestamp: number) {
   return new Date(timestamp).toLocaleString();
 }
 
+function MetadataTextEntries({ entries }: { entries: MetadataTextEntry[] }) {
+  return (
+    <section className="metadata-text-section">
+      <h2>Text data</h2>
+      {entries.map((entry, index) => (
+        <details
+          className="metadata-text-entry"
+          key={`${entry.kind}-${entry.label}-${index}`}
+        >
+          <summary>
+            <span>
+              {entry.translatedLabel || entry.label}
+              {entry.language ? ` (${entry.language})` : ""}
+              {entry.compressed ? " compressed" : ""}
+            </span>
+            <span>{formatBytes(entry.valueLength)}</span>
+          </summary>
+          <pre>{entry.value}</pre>
+          {entry.truncated && (
+            <p>
+              Showing first {formatBytes(entry.value.length)} of{" "}
+              {formatBytes(entry.valueLength)}.
+            </p>
+          )}
+        </details>
+      ))}
+    </section>
+  );
+}
+
 function MetadataPanel({
   metadata,
   error,
@@ -174,14 +208,19 @@ function MetadataPanel({
       {isLoading && <p className="metadata-status">Loading...</p>}
       {error && <p className="metadata-status">{error}</p>}
       {!isLoading && !error && metadata && (
-        <dl>
-          {rows.map(([label, value]) => (
-            <React.Fragment key={label}>
-              <dt>{label}</dt>
-              <dd>{value}</dd>
-            </React.Fragment>
-          ))}
-        </dl>
+        <>
+          <dl>
+            {rows.map(([label, value]) => (
+              <React.Fragment key={label}>
+                <dt>{label}</dt>
+                <dd>{value}</dd>
+              </React.Fragment>
+            ))}
+          </dl>
+          {metadata.textEntries && metadata.textEntries.length > 0 && (
+            <MetadataTextEntries entries={metadata.textEntries} />
+          )}
+        </>
       )}
     </aside>
   );
