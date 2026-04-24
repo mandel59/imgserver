@@ -317,7 +317,13 @@ export default function Controls() {
                     key={option.value}
                     type="button"
                     className={viewMode === option.value ? "active" : ""}
-                    onClick={() => setViewMode(option.value)}
+                    onClick={() => {
+                      if (viewMode === option.value) return;
+
+                      const anchor = currentFileScrollAnchor();
+                      setViewMode(option.value);
+                      restoreFileScrollAnchor(anchor);
+                    }}
                     aria-pressed={viewMode === option.value}
                     aria-label={`${option.label}表示`}
                   >
