@@ -437,6 +437,12 @@ button:focus-visible,
     gap: 10px;
   }
 
+  .file-container-list .file-icon {
+    grid-row: 1 / span 2;
+    align-self: stretch;
+    height: auto;
+  }
+
   .file-container-list .file-meta {
     grid-column: 2;
     justify-content: flex-start;
