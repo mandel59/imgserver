@@ -109,7 +109,6 @@ export default function Controls() {
     sort?: number;
     display?: number;
   }>({});
-  const controlsRef = useRef<HTMLDivElement>(null);
   const sortMenuContainerRef = useRef<HTMLDivElement>(null);
   const displayMenuContainerRef = useRef<HTMLDivElement>(null);
   const sortMenuRef = useRef<HTMLDivElement>(null);
@@ -128,10 +127,11 @@ export default function Controls() {
     if (openMenu === null) return;
 
     const onPointerDown = (event: PointerEvent) => {
-      if (
-        controlsRef.current &&
-        !controlsRef.current.contains(event.target as Node)
-      ) {
+      const menuContainer =
+        openMenu === "sort"
+          ? sortMenuContainerRef.current
+          : displayMenuContainerRef.current;
+      if (menuContainer && !menuContainer.contains(event.target as Node)) {
         setOpenMenu(null);
       }
     };
@@ -185,7 +185,7 @@ export default function Controls() {
   }, [openMenu]);
 
   return (
-    <div id="controls" ref={controlsRef}>
+    <div id="controls">
       <button
         onClick={() => !isFetching && refetchCurrentFileItems()}
         aria-disabled={isFetching}
