@@ -52,10 +52,16 @@ body {
 
 #file-container {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(var(--grid-card-min, 200px), 1fr));
   gap: 20px;
   margin: 24px 0 80px;
   padding: 0 16px;
+}
+
+#file-container.file-container-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .file-item {
@@ -114,6 +120,52 @@ body {
   flex-shrink: 0;
 }
 
+.file-meta {
+  display: none;
+}
+
+.file-container-list .file-item {
+  display: grid;
+  grid-template-columns: minmax(56px, 88px) minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  min-height: var(--thumbnail-height, 64px);
+  height: auto;
+}
+
+.file-container-list .file-item:hover,
+.file-container-list .file-item:focus-within,
+.file-container-list .file-item:focus-visible {
+  transform: translateY(-1px);
+}
+
+.file-container-list .file-icon {
+  width: 100%;
+  min-height: var(--thumbnail-height, 64px);
+  height: var(--thumbnail-height, 64px);
+  flex-grow: 0;
+  border-radius: 6px 0 0 6px;
+  overflow: hidden;
+}
+
+.file-container-list .file-name {
+  padding: 8px 0;
+  text-align: left;
+  font-size: 0.9rem;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.file-container-list .file-meta {
+  display: flex;
+  gap: 16px;
+  justify-content: flex-end;
+  padding: 8px 12px 8px 0;
+  color: var(--placeholder-color);
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
 .image-thumbnail {
   width: 100%;
   height: 100%;
@@ -126,6 +178,7 @@ body {
   flex-wrap: wrap;
   gap: 8px;
   align-items: center;
+  max-width: 100%;
 }
 
 button,
@@ -182,6 +235,74 @@ button:focus-visible,
   }
   &:hover svg {
     color: var(--link-color);
+  }
+}
+
+.segmented-control {
+  display: inline-flex;
+  border: 1px solid var(--button-border);
+  border-radius: 4px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.segmented-control button {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.segmented-control button + button {
+  border-left: 1px solid var(--button-border);
+}
+
+.segmented-control button.active {
+  color: var(--link-color);
+  background: var(--card-bg);
+}
+
+.segmented-control svg {
+  width: 15px;
+  height: 15px;
+}
+
+@media (max-width: 768px) {
+  #controls {
+    width: 100%;
+  }
+
+  .search-input {
+    flex: 1 1 180px;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 560px) {
+  #file-container {
+    padding: 0 12px;
+  }
+
+  #file-container.file-container-list {
+    gap: 10px;
+  }
+
+  .file-container-list .file-item {
+    grid-template-columns: minmax(52px, 72px) minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .file-container-list .file-meta {
+    grid-column: 2;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 4px 12px;
+    padding: 0 10px 8px 0;
+    white-space: normal;
   }
 }
 
