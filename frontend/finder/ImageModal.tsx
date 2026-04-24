@@ -414,6 +414,13 @@ export default function ImageModal() {
           <FaInfo size={18} />
         </button>
       )}
+      {showMetadataButton && isMetadataOpen && (
+        <MetadataPanel
+          metadata={metadata}
+          error={metadataError}
+          isLoading={isMetadataLoading}
+        />
+      )}
       {showSwitchButtons && (
         <>
           <button
@@ -435,13 +442,6 @@ export default function ImageModal() {
         </>
       )}
       <ImageContainer />
-      {showMetadataButton && isMetadataOpen && (
-        <MetadataPanel
-          metadata={metadata}
-          error={metadataError}
-          isLoading={isMetadataLoading}
-        />
-      )}
     </dialog>
   );
 }
