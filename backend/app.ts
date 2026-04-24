@@ -14,6 +14,7 @@ import { stream } from "hono/streaming";
 import { cors } from "hono/cors";
 import { join, extname, basename, dirname } from "node:path/posix";
 import { readFile, readdir, stat } from "node:fs/promises";
+import { createHash } from "node:crypto";
 import { inflateSync } from "node:zlib";
 import sharp from "sharp";
 import AdbZip from "adm-zip";
@@ -43,8 +44,100 @@ const archiveExtensions = [
 const maxMetadataTextLength = 16 * 1024;
 const maxInflatedMetadataTextLength = 256 * 1024;
 const pngSignature = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+const transformedImageCacheMaxEntries = 100;
+const transformedImageCacheMaxBytes = 64 * 1024 * 1024;
 
 const app = new Hono();
+
+type TransformedImageCacheKeyOptions = {
+  path: string;
+  archive: string;
+  key: string;
+  encoding?: string;
+  mtime: number;
+  size: number;
+  width?: number;
+  height?: number;
+  fit?: string;
+  format?: string;
+  keepMetadata: boolean;
+};
+
+type TransformedImageCacheEntry = {
+  buffer: Buffer;
+  size: number;
+};
+
+const transformedImageCache = new Map<string, TransformedImageCacheEntry>();
+let transformedImageCacheBytes = 0;
+
+export function createTransformedImageCacheKey(options: TransformedImageCacheKeyOptions) {
+  return JSON.stringify({
+    path: options.path,
+    archive: options.archive,
+    key: options.key,
+    encoding: options.encoding,
+    mtime: options.mtime,
+    size: options.size,
+    width: options.width,
+    height: options.height,
+    fit: options.fit,
+    format: options.format,
+    keepMetadata: options.keepMetadata,
+  });
+}
+
+function getTransformedImageCache(key: string) {
+  const entry = transformedImageCache.get(key);
+  if (!entry) {
+    return null;
+  }
+
+  transformedImageCache.delete(key);
+  transformedImageCache.set(key, entry);
+  return entry.buffer;
+}
+
+function pruneTransformedImageCache() {
+  while (
+    transformedImageCache.size > transformedImageCacheMaxEntries ||
+    transformedImageCacheBytes > transformedImageCacheMaxBytes
+  ) {
+    const oldestKey = transformedImageCache.keys().next().value;
+    if (oldestKey == null) {
+      return;
+    }
+    const oldestEntry = transformedImageCache.get(oldestKey);
+    transformedImageCache.delete(oldestKey);
+    if (oldestEntry) {
+      transformedImageCacheBytes -= oldestEntry.size;
+    }
+  }
+}
+
+function setTransformedImageCache(key: string, buffer: Buffer) {
+  const existing = transformedImageCache.get(key);
+  if (existing) {
+    transformedImageCacheBytes -= existing.size;
+    transformedImageCache.delete(key);
+  }
+
+  if (buffer.byteLength > transformedImageCacheMaxBytes) {
+    pruneTransformedImageCache();
+    return;
+  }
+
+  transformedImageCache.set(key, {
+    buffer,
+    size: buffer.byteLength,
+  });
+  transformedImageCacheBytes += buffer.byteLength;
+  pruneTransformedImageCache();
+}
+
+type ImageEtagSource =
+  | { kind: "file"; path: string }
+  | { kind: "zip-entry"; archive: string; key: string };
 
 function decodeImageRequestPath(path: string) {
   try {
@@ -76,6 +169,43 @@ function resolveArchiveKey(path: string, archive: string) {
   }
 
   return path.slice(archive.length + 1);
+}
+
+function createImageEtag(input: {
+  mtime: number;
+  fileSize: number;
+  source: ImageEtagSource;
+  transform: {
+    width?: number;
+    height?: number;
+    fit?: string;
+    format?: string;
+  };
+  keepMetadata: boolean;
+}) {
+  const digest = createHash("sha256")
+    .update(JSON.stringify({
+      source: input.source,
+      transform: input.transform,
+      keepMetadata: input.keepMetadata,
+    }))
+    .digest("base64url")
+    .slice(0, 22);
+
+  return `${input.mtime.toString(16)}-${input.fileSize.toString(16)}-${digest}`;
+}
+
+function parseResizeDimension(value: string | undefined) {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (!/^[1-9]\d*$/.test(value)) {
+    return null;
+  }
+
+  const dimension = Number(value);
+  return dimension <= 4000 ? dimension : null;
 }
 
 function createMetadataTextEntry(
@@ -339,12 +469,15 @@ app.get("/.be/images/*", etag(), async (c) => {
   let header: AdbZip.EntryHeader | null = null;
   let mtime: number = 0;
   let fileSize: number = 0;
+  let archiveKey = "";
+  let etagSource: ImageEtagSource | null = null;
   if (archive) {
     const key = resolveArchiveKey(path, archive);
     if (key == null) {
       console.error(`Invalid path attempt: ${path}`);
       return c.json({ error: "File not found" }, 404);
     }
+    archiveKey = key;
 
     const archivePath = join(imagesDir, archive);
 
@@ -358,6 +491,8 @@ app.get("/.be/images/*", etag(), async (c) => {
       return c.json({ error: "File not found" }, 404);
     }
     mtime = header?.time?.getTime() ?? 0;
+    fileSize = header.size;
+    etagSource = { kind: "zip-entry", archive, key };
   }
 
   const filePath = join(imagesDir, path);
@@ -367,12 +502,13 @@ app.get("/.be/images/*", etag(), async (c) => {
       const fileInfo = await stat(filePath);
 
       // 通常ファイルでない場合は404エラー
-      if (!fileInfo.isFile) {
+      if (!fileInfo.isFile()) {
         console.error(`Not a regular file: ${filePath}`);
         return c.json({ error: "File not found" }, 404);
       }
       mtime = fileInfo.mtime.getTime();
       fileSize = fileInfo.size;
+      etagSource = { kind: "file", path };
     }
 
     // クエリパラメータからリサイズ設定を取得
@@ -380,6 +516,8 @@ app.get("/.be/images/*", etag(), async (c) => {
     const height = c.req.query("height");
     const fit = c.req.query("fit");
     const format = c.req.query("format");
+    const resizeWidth = parseResizeDimension(width);
+    const resizeHeight = parseResizeDimension(height);
 
     const validFormats = ["png", "jpeg", "webp", "avif"] as const;
     if (format && !validFormats.includes(format as any)) {
@@ -394,16 +532,8 @@ app.get("/.be/images/*", etag(), async (c) => {
     }
 
     // リサイズパラメータのバリデーション
-    if (width || height) {
-      const numWidth = width ? parseInt(width) : undefined;
-      const numHeight = height ? parseInt(height) : undefined;
-
-      if (
-        (numWidth && (isNaN(numWidth) || numWidth <= 0 || numWidth > 4000)) ||
-        (numHeight && (isNaN(numHeight) || numHeight <= 0 || numHeight > 4000))
-      ) {
-        return c.json({ error: "Invalid width/height parameters" }, 400);
-      }
+    if (resizeWidth === null || resizeHeight === null) {
+      return c.json({ error: "Invalid width/height parameters" }, 400);
     }
 
     // sharpを使ってメタデータを除去し、必要に応じてリサイズ
@@ -415,27 +545,22 @@ app.get("/.be/images/*", etag(), async (c) => {
       image.keepMetadata()
     }
 
-    // ETag生成 (リサイズパラメータがある場合は含める)
-    let etagValue = `${mtime.toString(16)}-${fileSize.toString(16)}`;
-
-    if (keepMetadata) {
-      etagValue += "-km"
+    if (etagSource == null) {
+      return c.json({ error: "File not found" }, 404);
     }
 
-    if (width || height || fit || format) {
-      const paramsHash = Buffer.from(
-        JSON.stringify({
-          width: width || undefined,
-          height: height || undefined,
-          fit: fit || undefined,
-          format: format || undefined,
-        })
-      ).toString("hex");
-
-      etagValue = `${mtime.toString(16)}-${fileSize.toString(
-        16
-      )}-${paramsHash}`;
-    }
+    const etagValue = createImageEtag({
+      mtime,
+      fileSize,
+      source: etagSource,
+      transform: {
+        width: resizeWidth,
+        height: resizeHeight,
+        fit: fit || undefined,
+        format: format || undefined,
+      },
+      keepMetadata,
+    });
 
     c.header("ETag", `"${etagValue}"`);
 
@@ -465,8 +590,8 @@ app.get("/.be/images/*", etag(), async (c) => {
         );
       }
       image.resize({
-        width: width ? parseInt(width) : undefined,
-        height: height ? parseInt(height) : undefined,
+        width: resizeWidth,
+        height: resizeHeight,
         withoutEnlargement: true, // 元画像より大きくしない
         fit: fitMode || "inside", // アスペクト比を維持
       });
@@ -501,8 +626,30 @@ app.get("/.be/images/*", etag(), async (c) => {
         break;
     }
 
+    const transformedImageCacheKey = createTransformedImageCacheKey({
+      path,
+      archive,
+      key: archiveKey,
+      encoding: archive ? encoding : undefined,
+      mtime,
+      size: archive ? (header?.size ?? buffer?.byteLength ?? 0) : fileSize,
+      width: resizeWidth,
+      height: resizeHeight,
+      fit: fit || undefined,
+      format: format || undefined,
+      keepMetadata,
+    });
+    const cachedBuffer = getTransformedImageCache(transformedImageCacheKey);
+    if (cachedBuffer) {
+      return stream(c, async (stream) => {
+        await stream.write(cachedBuffer);
+      });
+    }
+
     return stream(c, async (stream) => {
-      await stream.write(await image.toBuffer());
+      const outputBuffer = await image.toBuffer();
+      setTransformedImageCache(transformedImageCacheKey, outputBuffer);
+      await stream.write(outputBuffer);
     });
   } catch (err) {
     if (
@@ -641,7 +788,7 @@ app.get("/.be/api/list-files", async (c) => {
       if (key !== "" && key !== dir) continue;
       const file = basename(entryName);
       const isDirectory = entryName.endsWith("/");
-      const ext = extname(file);
+      const ext = extname(file).toLowerCase();
       const isImage = imageExtensions.includes(ext);
       const isArchive = false;
       items.push({

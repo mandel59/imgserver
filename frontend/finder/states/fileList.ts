@@ -8,17 +8,20 @@ import { fetchFileItems } from "../api.ts";
 
 export const sortOptionAtom = atom<SortOption>("name");
 
+type FileItemsQueryKey = readonly ["files", string, string, SortOption];
+
 export const currentFileItemsQueryAtom = atomWithQuery((get) => {
   const sortOption = get(sortOptionAtom);
   const currentPath = get(currentPathAtom);
   const archive = get(currentArchiveAtom);
   return {
-    queryKey: ["files", currentPath],
-    queryFn: async (_context) => {
-      const files = await fetchFileItems(sortOption, currentPath, archive);
+    queryKey: ["files", currentPath, archive, sortOption] as const,
+    queryFn: async ({ queryKey }) => {
+      const [, queryPath, queryArchive, querySortOption] = queryKey as FileItemsQueryKey;
+      const files = await fetchFileItems(querySortOption, queryPath, queryArchive);
       // 読み込み完了アニメーションが正常に再生されるよう、待機する。
       await new Promise(resolve => requestAnimationFrame(resolve));
-      return { path: currentPath, files };
+      return { path: queryPath, files };
     },
   };
 });
