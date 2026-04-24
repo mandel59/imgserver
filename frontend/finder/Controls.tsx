@@ -167,8 +167,10 @@ export default function Controls() {
           }
         >
           <FaSortAmountDown />
-          <span>{currentSortLabel}</span>
-          <span aria-hidden="true">{currentSortMarker}</span>
+          <span className="sort-menu-button-label">{currentSortLabel}</span>
+          <span className="sort-menu-button-marker" aria-hidden="true">
+            {currentSortMarker}
+          </span>
         </button>
         {openMenu === "sort" && (
           <div

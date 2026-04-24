@@ -259,16 +259,27 @@ button:focus-visible,
   width: 128px;
   box-sizing: border-box;
   padding: 0 10px;
-  display: flex;
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr) 16px;
   align-items: center;
-  justify-content: center;
-  gap: 6px;
+  gap: 4px;
   white-space: nowrap;
 
   & svg {
     width: 14px;
     height: 14px;
+    justify-self: center;
   }
+}
+
+.sort-menu-button-label {
+  overflow: hidden;
+  text-align: center;
+  text-overflow: ellipsis;
+}
+
+.sort-menu-button-marker {
+  justify-self: center;
 }
 
 .sort-menu,
