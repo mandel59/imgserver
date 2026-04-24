@@ -3,6 +3,7 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import sharp from "sharp";
+import AdmZip from "adm-zip";
 
 let app: { fetch: (request: Request) => Response | Promise<Response> };
 let tempDir: string;
@@ -80,6 +81,11 @@ beforeAll(async () => {
       createPngTextChunk("Comment", commentText),
     ),
   );
+  const zip = new AdmZip();
+  zip.addFile("UPPER.JPG", basePng);
+  zip.addFile("PHOTO.PNG", basePng);
+  zip.addFile("notes.txt", Buffer.from("not an image"));
+  await writeFile(join(tempDir, "upper-extensions.zip"), zip.toBuffer());
 
   process.argv = ["bun", "test", "--dir", tempDir, "--showMetadata"];
   ({ default: app } = await import("./app.ts"));
@@ -151,4 +157,37 @@ test("returns truncated PNG text metadata", async () => {
   });
   expect(metadata.textEntries[0].value).toStartWith("PNG comment PNG comment");
   expect(metadata.textEntries[0].value.length).toBe(16 * 1024);
+});
+
+test("recognizes uppercase image extensions inside ZIP archives", async () => {
+  const response = await app.fetch(
+    new Request(
+      "http://localhost/.be/api/list-files?archive=upper-extensions.zip&path=upper-extensions.zip",
+    ),
+  );
+
+  expect(response.status).toBe(200);
+  const listing = await response.json();
+  expect(listing.exists).toBe(true);
+  expect(listing.files).toContainEqual(
+    expect.objectContaining({
+      name: "UPPER.JPG",
+      isImage: true,
+      isArchive: false,
+    }),
+  );
+  expect(listing.files).toContainEqual(
+    expect.objectContaining({
+      name: "PHOTO.PNG",
+      isImage: true,
+      isArchive: false,
+    }),
+  );
+  expect(listing.files).toContainEqual(
+    expect.objectContaining({
+      name: "notes.txt",
+      isImage: false,
+      isArchive: false,
+    }),
+  );
 });

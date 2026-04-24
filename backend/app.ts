@@ -641,7 +641,7 @@ app.get("/.be/api/list-files", async (c) => {
       if (key !== "" && key !== dir) continue;
       const file = basename(entryName);
       const isDirectory = entryName.endsWith("/");
-      const ext = extname(file);
+      const ext = extname(file).toLowerCase();
       const isImage = imageExtensions.includes(ext);
       const isArchive = false;
       items.push({
