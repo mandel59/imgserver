@@ -423,12 +423,25 @@ button:focus-visible,
 
 @media (max-width: 768px) {
   #controls {
+    position: relative;
     width: 100%;
   }
 
   .search-input {
     flex: 1 1 180px;
     min-width: 0;
+  }
+
+  .sort-menu-container,
+  .display-menu-container {
+    position: static;
+  }
+
+  .sort-menu,
+  .display-menu {
+    left: 0;
+    right: auto;
+    width: min(320px, 100%);
   }
 }
 
