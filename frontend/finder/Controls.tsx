@@ -14,7 +14,7 @@ import {
 } from "./states/display.ts";
 import { globAtom } from "./states/location.ts";
 import type { SortOption, SortOrder } from "@/common/types.ts";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import {
   FaRedo,
@@ -56,7 +56,15 @@ export default function Controls() {
   const [thumbnailSize, setThumbnailSize] = useAtom(thumbnailSizeAtom);
   const [glob, setGlob] = useAtom(globAtom);
   const [openMenu, setOpenMenu] = useState<"sort" | "display" | null>(null);
+  const [menuLeft, setMenuLeft] = useState<{
+    sort?: number;
+    display?: number;
+  }>({});
   const controlsRef = useRef<HTMLDivElement>(null);
+  const sortMenuContainerRef = useRef<HTMLDivElement>(null);
+  const displayMenuContainerRef = useRef<HTMLDivElement>(null);
+  const sortMenuRef = useRef<HTMLDivElement>(null);
+  const displayMenuRef = useRef<HTMLDivElement>(null);
   const {
     refetch: refetchCurrentFileItems,
     isFetching,
@@ -92,6 +100,41 @@ export default function Controls() {
     };
   }, [openMenu]);
 
+  useLayoutEffect(() => {
+    if (openMenu === null) {
+      setMenuLeft({});
+      return;
+    }
+
+    const updateMenuPosition = () => {
+      const container =
+        openMenu === "sort"
+          ? sortMenuContainerRef.current
+          : displayMenuContainerRef.current;
+      const menu =
+        openMenu === "sort" ? sortMenuRef.current : displayMenuRef.current;
+      if (!container || !menu) return;
+
+      const padding = 12;
+      const containerRect = container.getBoundingClientRect();
+      const menuWidth = menu.offsetWidth;
+      const preferredLeft = containerRect.width - menuWidth;
+      const minLeft = padding - containerRect.left;
+      const maxLeft =
+        window.innerWidth - padding - menuWidth - containerRect.left;
+      const nextLeft = Math.min(Math.max(preferredLeft, minLeft), maxLeft);
+      setMenuLeft((current) =>
+        current[openMenu] === nextLeft
+          ? current
+          : { ...current, [openMenu]: nextLeft },
+      );
+    };
+
+    updateMenuPosition();
+    window.addEventListener("resize", updateMenuPosition);
+    return () => window.removeEventListener("resize", updateMenuPosition);
+  }, [openMenu]);
+
   return (
     <div id="controls" ref={controlsRef}>
       <button
@@ -112,7 +155,7 @@ export default function Controls() {
         placeholder="ファイル名検索 (例: *.jpg)"
         className="search-input"
       />
-      <div className="sort-menu-container">
+      <div className="sort-menu-container" ref={sortMenuContainerRef}>
         <button
           type="button"
           className="sort-menu-button"
@@ -128,7 +171,17 @@ export default function Controls() {
           <span aria-hidden="true">{currentSortMarker}</span>
         </button>
         {openMenu === "sort" && (
-          <div className="sort-menu" role="group" aria-label="並び替え">
+          <div
+            className="sort-menu"
+            role="group"
+            aria-label="並び替え"
+            ref={sortMenuRef}
+            style={
+              menuLeft.sort === undefined
+                ? undefined
+                : { left: `${menuLeft.sort}px`, right: "auto" }
+            }
+          >
             <div className="display-menu-section">
               <div className="display-menu-label">対象</div>
               <div
@@ -176,7 +229,7 @@ export default function Controls() {
           </div>
         )}
       </div>
-      <div className="display-menu-container">
+      <div className="display-menu-container" ref={displayMenuContainerRef}>
         <button
           type="button"
           className="display-menu-button"
@@ -190,7 +243,17 @@ export default function Controls() {
           <FaSlidersH />
         </button>
         {openMenu === "display" && (
-          <div className="display-menu" role="group" aria-label="表示設定">
+          <div
+            className="display-menu"
+            role="group"
+            aria-label="表示設定"
+            ref={displayMenuRef}
+            style={
+              menuLeft.display === undefined
+                ? undefined
+                : { left: `${menuLeft.display}px`, right: "auto" }
+            }
+          >
             <div className="display-menu-section">
               <div className="display-menu-label">表示形式</div>
               <div
