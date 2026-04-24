@@ -4,6 +4,7 @@ import {
   sortOptionAtom,
 } from "./states/fileList.ts";
 import {
+  type ViewMode,
   type ThumbnailSize,
   darkModeAtom,
   thumbnailSizeAtom,
@@ -11,7 +12,27 @@ import {
 } from "./states/display.ts";
 import { globAtom } from "./states/location.ts";
 import type { SortOption } from "@/common/types.ts";
-import { FaRedo, FaMoon, FaSun, FaThLarge, FaList } from "react-icons/fa";
+import { useEffect, useRef, useState } from "react";
+import type { ReactNode } from "react";
+import {
+  FaRedo,
+  FaMoon,
+  FaSun,
+  FaThLarge,
+  FaList,
+  FaSlidersH,
+} from "react-icons/fa";
+
+const viewModeOptions: { value: ViewMode; label: string; icon: ReactNode }[] = [
+  { value: "grid", label: "グリッド", icon: <FaThLarge /> },
+  { value: "list", label: "リスト", icon: <FaList /> },
+];
+
+const thumbnailSizeOptions: { value: ThumbnailSize; label: string }[] = [
+  { value: "small", label: "小" },
+  { value: "medium", label: "中" },
+  { value: "large", label: "大" },
+];
 
 export default function Controls() {
   const [sortOption, setSortOption] = useAtom(sortOptionAtom);
@@ -19,11 +40,39 @@ export default function Controls() {
   const [viewMode, setViewMode] = useAtom(viewModeAtom);
   const [thumbnailSize, setThumbnailSize] = useAtom(thumbnailSizeAtom);
   const [glob, setGlob] = useAtom(globAtom);
+  const [isDisplayMenuOpen, setIsDisplayMenuOpen] = useState(false);
+  const displayMenuRef = useRef<HTMLDivElement>(null);
   const {
     refetch: refetchCurrentFileItems,
     isFetching,
     isFetched,
   } = useAtomValue(currentFileItemsQueryAtom);
+
+  useEffect(() => {
+    if (!isDisplayMenuOpen) return;
+
+    const onPointerDown = (event: PointerEvent) => {
+      if (
+        displayMenuRef.current &&
+        !displayMenuRef.current.contains(event.target as Node)
+      ) {
+        setIsDisplayMenuOpen(false);
+      }
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsDisplayMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [isDisplayMenuOpen]);
+
   return (
     <div id="controls">
       <button
@@ -54,36 +103,64 @@ export default function Controls() {
         <option value="date">更新日時順</option>
         <option value="size">サイズ順</option>
       </select>
-      <div className="segmented-control" role="group" aria-label="表示モード">
+      <div className="display-menu-container" ref={displayMenuRef}>
         <button
           type="button"
-          className={viewMode === "grid" ? "active" : ""}
-          onClick={() => setViewMode("grid")}
-          aria-pressed={viewMode === "grid"}
-          aria-label="グリッド表示"
+          className="display-menu-button"
+          aria-label="表示設定"
+          aria-haspopup="menu"
+          aria-expanded={isDisplayMenuOpen}
+          onClick={() => setIsDisplayMenuOpen((open) => !open)}
         >
-          <FaThLarge />
+          <FaSlidersH />
         </button>
-        <button
-          type="button"
-          className={viewMode === "list" ? "active" : ""}
-          onClick={() => setViewMode("list")}
-          aria-pressed={viewMode === "list"}
-          aria-label="リスト表示"
-        >
-          <FaList />
-        </button>
+        {isDisplayMenuOpen && (
+          <div className="display-menu" role="group" aria-label="表示設定">
+            <div className="display-menu-section">
+              <div className="display-menu-label">表示形式</div>
+              <div
+                className="segmented-control"
+                role="group"
+                aria-label="表示モード"
+              >
+                {viewModeOptions.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    className={viewMode === option.value ? "active" : ""}
+                    onClick={() => setViewMode(option.value)}
+                    aria-pressed={viewMode === option.value}
+                    aria-label={`${option.label}表示`}
+                  >
+                    {option.icon}
+                    <span>{option.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="display-menu-section">
+              <div className="display-menu-label">サムネイル</div>
+              <div
+                className="thumbnail-size-control"
+                role="group"
+                aria-label="サムネイルサイズ"
+              >
+                {thumbnailSizeOptions.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    className={thumbnailSize === option.value ? "active" : ""}
+                    onClick={() => setThumbnailSize(option.value)}
+                    aria-pressed={thumbnailSize === option.value}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
-      <select
-        id="thumbnail-size"
-        value={thumbnailSize}
-        onChange={(e) => setThumbnailSize(e.target.value as ThumbnailSize)}
-        aria-label="サムネイルサイズ"
-      >
-        <option value="small">小</option>
-        <option value="medium">中</option>
-        <option value="large">大</option>
-      </select>
       <button
         onClick={() => setDarkMode(!darkMode)}
         className="dark-mode-toggle"
