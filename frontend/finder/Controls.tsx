@@ -44,6 +44,7 @@ export default function Controls() {
       >
         <option value="name">名前順</option>
         <option value="date">更新日時順</option>
+        <option value="size">サイズ順</option>
       </select>
       <button
         onClick={() => setDarkMode(!darkMode)}
