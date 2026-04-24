@@ -183,14 +183,10 @@ export function ImageIcon({
       metadata={metadata}
     >
       <img
+        className="file-thumbnail"
         loading="lazy"
         src={thumbnailUrl}
         srcSet={`${thumbnailUrl2x} 2x`}
-        style={{
-          width: `100%`,
-          height: `100%`,
-          objectFit: "contain",
-        }}
       />
     </IconWithName>
   );
