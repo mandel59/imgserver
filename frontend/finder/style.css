@@ -256,7 +256,8 @@ button:focus-visible,
 
 .sort-menu-button {
   height: 32px;
-  min-width: 112px;
+  width: 128px;
+  box-sizing: border-box;
   padding: 0 10px;
   display: flex;
   align-items: center;
