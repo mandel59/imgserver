@@ -1,4 +1,5 @@
 export type SortOption = "name" | "date" | "size";
+export type SortOrder = "asc" | "desc";
 export type FileItem = {
   name: string;
   isDirectory: boolean;

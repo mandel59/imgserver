@@ -99,6 +99,8 @@ beforeAll(async () => {
   cacheAlternatePng = await createSolidPng({ r: 40, g: 200, b: 40 });
   expect(cacheAlternatePng.byteLength).toBe(cacheOriginalPng.byteLength);
   await writeFile(join(tempDir, "cache.png"), cacheOriginalPng);
+  await writeFile(join(tempDir, "sort-small.jpg"), Buffer.alloc(10));
+  await writeFile(join(tempDir, "sort-large.jpg"), Buffer.alloc(20));
   const archive = new AdmZip();
   archive.addFile("first.png", basePng);
   archive.addFile("second.png", basePng);
@@ -305,6 +307,30 @@ test("uses distinct ETags for different images inside a ZIP archive", async () =
   expect(firstResponse.headers.get("ETag")).not.toBe(
     secondResponse.headers.get("ETag"),
   );
+});
+
+test("sorts file listings by requested order", async () => {
+  const ascendingResponse = await app.fetch(
+    new Request("http://localhost/.be/api/list-files?sort=size&order=asc"),
+  );
+  const descendingResponse = await app.fetch(
+    new Request("http://localhost/.be/api/list-files?sort=size&order=desc"),
+  );
+
+  expect(ascendingResponse.status).toBe(200);
+  expect(descendingResponse.status).toBe(200);
+
+  const ascending = await ascendingResponse.json();
+  const descending = await descendingResponse.json();
+  const ascendingSortFiles = ascending.files
+    .filter((file: { name: string }) => file.name.startsWith("sort-"))
+    .map((file: { name: string }) => file.name);
+  const descendingSortFiles = descending.files
+    .filter((file: { name: string }) => file.name.startsWith("sort-"))
+    .map((file: { name: string }) => file.name);
+
+  expect(ascendingSortFiles).toEqual(["sort-small.jpg", "sort-large.jpg"]);
+  expect(descendingSortFiles).toEqual(["sort-large.jpg", "sort-small.jpg"]);
 });
 
 test("recognizes uppercase image extensions inside ZIP archives", async () => {

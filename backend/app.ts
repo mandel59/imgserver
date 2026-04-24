@@ -24,6 +24,8 @@ import type {
   ImageMetadata,
   MetadataTextEntry,
   RuntimeFeatureOptions,
+  SortOption,
+  SortOrder,
 } from "@/common/types";
 
 const imageExtensions = [
@@ -48,6 +50,50 @@ const transformedImageCacheMaxEntries = 100;
 const transformedImageCacheMaxBytes = 64 * 1024 * 1024;
 
 const app = new Hono();
+
+const isSortOption = (value: string): value is SortOption =>
+  value === "name" || value === "date" || value === "size";
+
+const normalizeSortOption = (value: string): SortOption =>
+  isSortOption(value) ? value : "name";
+
+const defaultSortOrder = (sort: SortOption): SortOrder =>
+  sort === "name" ? "asc" : "desc";
+
+const normalizeSortOrder = (
+  sort: SortOption,
+  value: string | undefined,
+): SortOrder =>
+  value === "asc" || value === "desc" ? value : defaultSortOrder(sort);
+
+const compareFileItems = (
+  sort: SortOption,
+  order: SortOrder,
+  a: FileItem,
+  b: FileItem,
+) => {
+  if (a.isDirectory !== b.isDirectory) {
+    return a.isDirectory ? -1 : 1;
+  }
+
+  let comparison = 0;
+  switch (sort) {
+    case "date":
+      comparison = a.modified - b.modified;
+      break;
+    case "size":
+      comparison = a.size - b.size;
+      break;
+    case "name":
+      comparison = a.name.localeCompare(b.name);
+      break;
+  }
+
+  if (comparison === 0) {
+    comparison = a.name.localeCompare(b.name);
+  }
+  return order === "desc" ? -comparison : comparison;
+};
 
 type TransformedImageCacheKeyOptions = {
   path: string;
@@ -757,7 +803,15 @@ app.get("/.be/api/image-metadata", async (c) => {
 
 // ファイル一覧取得API
 app.get("/.be/api/list-files", async (c) => {
-  const { sort = "name", path = "", archive = "", encoding = "shift_jis" } = c.req.query();
+  const {
+    sort = "name",
+    order,
+    path = "",
+    archive = "",
+    encoding = "shift_jis",
+  } = c.req.query();
+  const sortOption = normalizeSortOption(sort);
+  const sortOrder = normalizeSortOrder(sortOption, order);
 
   // セキュリティチェックと隠しファイルチェック
   if (
@@ -804,19 +858,7 @@ app.get("/.be/api/list-files", async (c) => {
     }
 
     // ソート処理 (ディレクトリを先に表示)
-    items.sort((a, b) => {
-      if (a.isDirectory !== b.isDirectory) {
-        return a.isDirectory ? -1 : 1;
-      }
-      switch (sort) {
-        case "date":
-          return b.modified - a.modified;
-        case "size":
-          return b.size - a.size;
-        default: // name
-          return a.name.localeCompare(b.name);
-      }
-    });
+    items.sort((a, b) => compareFileItems(sortOption, sortOrder, a, b));
 
     return c.json({ exists: true, files: items });
   }
@@ -888,19 +930,7 @@ app.get("/.be/api/list-files", async (c) => {
   }
 
   // ソート処理 (ディレクトリを先に表示)
-  items.sort((a, b) => {
-    if (a.isDirectory !== b.isDirectory) {
-      return a.isDirectory ? -1 : 1;
-    }
-    switch (sort) {
-      case "date":
-        return b.modified - a.modified;
-      case "size":
-        return b.size - a.size;
-      default: // name
-        return a.name.localeCompare(b.name);
-    }
-  });
+  items.sort((a, b) => compareFileItems(sortOption, sortOrder, a, b));
 
   return c.json({ exists: true, files: items });
 });
