@@ -28,5 +28,14 @@
     "paths": {
       "@/common/*": ["./common/*"]
     }
-  }
+  },
+  "include": [
+    "backend/**/*",
+    "common/**/*",
+    "frontend/**/*",
+    "*.ts",
+    "*.tsx",
+    "global.d.ts"
+  ],
+  "exclude": ["node_modules", "workspaces", "test-results"]
 }
