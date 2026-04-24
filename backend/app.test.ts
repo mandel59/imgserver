@@ -100,6 +100,35 @@ test("serves url-encoded image paths", async () => {
   expect((await response.arrayBuffer()).byteLength).toBeGreaterThan(0);
 });
 
+const invalidResizeDimensionCases = [
+  ["width", "NaN"],
+  ["width", "0"],
+  ["width", "-1"],
+  ["width", "1.5"],
+  ["width", "12px"],
+  ["width", "4001"],
+  ["width", ""],
+  ["height", "NaN"],
+  ["height", "0"],
+  ["height", "-1"],
+  ["height", "1.5"],
+  ["height", "12px"],
+  ["height", "4001"],
+] as const;
+
+for (const [parameter, value] of invalidResizeDimensionCases) {
+  test(`rejects invalid image resize ${parameter}=${value}`, async () => {
+    const response = await app.fetch(
+      new Request(`http://localhost/.be/images/test%23img.png?${parameter}=${value}`),
+    );
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({
+      error: "Invalid width/height parameters",
+    });
+  });
+}
+
 test("rejects malformed encoded image paths", async () => {
   const response = await app.fetch(
     new Request("http://localhost/.be/images/test%ZZimg.png"),

@@ -78,6 +78,19 @@ function resolveArchiveKey(path: string, archive: string) {
   return path.slice(archive.length + 1);
 }
 
+function parseResizeDimension(value: string | undefined) {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (!/^[1-9]\d*$/.test(value)) {
+    return null;
+  }
+
+  const dimension = Number(value);
+  return dimension <= 4000 ? dimension : null;
+}
+
 function createMetadataTextEntry(
   kind: MetadataTextEntry["kind"],
   label: string,
@@ -380,6 +393,8 @@ app.get("/.be/images/*", etag(), async (c) => {
     const height = c.req.query("height");
     const fit = c.req.query("fit");
     const format = c.req.query("format");
+    const resizeWidth = parseResizeDimension(width);
+    const resizeHeight = parseResizeDimension(height);
 
     const validFormats = ["png", "jpeg", "webp", "avif"] as const;
     if (format && !validFormats.includes(format as any)) {
@@ -394,16 +409,8 @@ app.get("/.be/images/*", etag(), async (c) => {
     }
 
     // リサイズパラメータのバリデーション
-    if (width || height) {
-      const numWidth = width ? parseInt(width) : undefined;
-      const numHeight = height ? parseInt(height) : undefined;
-
-      if (
-        (numWidth && (isNaN(numWidth) || numWidth <= 0 || numWidth > 4000)) ||
-        (numHeight && (isNaN(numHeight) || numHeight <= 0 || numHeight > 4000))
-      ) {
-        return c.json({ error: "Invalid width/height parameters" }, 400);
-      }
+    if (resizeWidth === null || resizeHeight === null) {
+      return c.json({ error: "Invalid width/height parameters" }, 400);
     }
 
     // sharpを使ってメタデータを除去し、必要に応じてリサイズ
@@ -425,8 +432,8 @@ app.get("/.be/images/*", etag(), async (c) => {
     if (width || height || fit || format) {
       const paramsHash = Buffer.from(
         JSON.stringify({
-          width: width || undefined,
-          height: height || undefined,
+          width: resizeWidth,
+          height: resizeHeight,
           fit: fit || undefined,
           format: format || undefined,
         })
@@ -465,8 +472,8 @@ app.get("/.be/images/*", etag(), async (c) => {
         );
       }
       image.resize({
-        width: width ? parseInt(width) : undefined,
-        height: height ? parseInt(height) : undefined,
+        width: resizeWidth,
+        height: resizeHeight,
         withoutEnlargement: true, // 元画像より大きくしない
         fit: fitMode || "inside", // アスペクト比を維持
       });
