@@ -26,6 +26,7 @@ import type {
   RuntimeFeatureOptions,
   SortOption,
   SortOrder,
+  TextFileContent,
 } from "@/common/types";
 
 const imageExtensions = [
@@ -43,6 +44,19 @@ const archiveExtensions = [
   ".zip",
 ];
 
+const textExtensions = [
+  ".txt",
+  ".md",
+  ".json",
+  ".csv",
+  ".tsv",
+  ".log",
+  ".yaml",
+  ".yml",
+  ".xml",
+];
+
+const maxTextFileBytes = 1024 * 1024;
 const maxMetadataTextLength = 16 * 1024;
 const maxInflatedMetadataTextLength = 256 * 1024;
 const pngSignature = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
@@ -199,6 +213,10 @@ function isInvalidImagePath(path: string) {
     path.includes("\\") ||
     path.split("/").some((part: string) => part.startsWith(".") || part.length === 0)
   );
+}
+
+function isTextPath(path: string) {
+  return textExtensions.includes(extname(path).toLowerCase());
 }
 
 function resolveArchiveKey(path: string, archive: string) {
@@ -801,6 +819,84 @@ app.get("/.be/api/image-metadata", async (c) => {
   }
 });
 
+app.get("/.be/api/text-file", async (c) => {
+  const { path = "", archive = "", encoding = "shift_jis" } = c.req.query();
+
+  if (path === "" || isInvalidImagePath(path) || !isTextPath(path)) {
+    console.error(`Invalid text path attempt: ${path}`);
+    return c.json({ error: "File not found" }, 404);
+  }
+
+  try {
+    if (archive) {
+      const key = resolveArchiveKey(path, archive);
+      if (key == null) {
+        console.error(`Invalid text path attempt: ${path}`);
+        return c.json({ error: "File not found" }, 404);
+      }
+
+      const archivePath = join(imagesDir, archive);
+      const zip = new AdbZip(archivePath);
+      const rawKey = iconv.encode(key, encoding).toString("utf-8");
+      const header = zip.getEntry(rawKey)?.header ?? null;
+      if (!header) {
+        return c.json({ error: "File not found" }, 404);
+      }
+      if (header.size > maxTextFileBytes) {
+        return c.json({ error: "File too large" }, 413);
+      }
+
+      const buffer = zip.readFile(rawKey) ?? null;
+      if (!buffer) {
+        return c.json({ error: "File not found" }, 404);
+      }
+
+      const result: TextFileContent = {
+        path,
+        archive,
+        name: basename(path),
+        size: header.size,
+        modified: header.time?.getTime() ?? 0,
+        content: buffer.toString("utf8"),
+      };
+      return c.json(result);
+    }
+
+    const filePath = join(imagesDir, path);
+    const fileInfo = await stat(filePath);
+    if (!fileInfo.isFile()) {
+      console.error(`Not a regular text file: ${filePath}`);
+      return c.json({ error: "File not found" }, 404);
+    }
+    if (fileInfo.size > maxTextFileBytes) {
+      return c.json({ error: "File too large" }, 413);
+    }
+
+    const result: TextFileContent = {
+      path,
+      archive,
+      name: basename(path),
+      size: fileInfo.size,
+      modified: fileInfo.mtime.getTime(),
+      content: await readFile(filePath, "utf8"),
+    };
+    return c.json(result);
+  } catch (err) {
+    if ((err as any)?.code === "ENOENT") {
+      return c.json({ error: "File not found" }, 404);
+    }
+    if ((err as any)?.code === "ERR_ENCODING_INVALID_ENCODED_DATA") {
+      return c.json({ error: "Unable to decode text file" }, 415);
+    }
+    console.error(
+      `Error processing text-file request for ${path}:`,
+      err?.constructor,
+      err
+    );
+    return c.json({ error: "Internal server error" }, 500);
+  }
+});
+
 // ファイル一覧取得API
 app.get("/.be/api/list-files", async (c) => {
   const {
@@ -844,11 +940,13 @@ app.get("/.be/api/list-files", async (c) => {
       const isDirectory = entryName.endsWith("/");
       const ext = extname(file).toLowerCase();
       const isImage = imageExtensions.includes(ext);
+      const isText = textExtensions.includes(ext);
       const isArchive = false;
       items.push({
         name: file,
         isDirectory,
         isImage,
+        isText,
         isArchive,
         modified: entry.header.time.getTime(),
         size: entry.header.size,
@@ -882,12 +980,14 @@ app.get("/.be/api/list-files", async (c) => {
         const fileInfo = await stat(fsFilePath);
         const isDirectory = fileInfo.isDirectory();
         const isImage = imageExtensions.includes(ext);
+        const isText = textExtensions.includes(ext);
         const isArchive = archiveExtensions.includes(ext);
         const filePath = join(path, fileName);
         items.push({
           name: fileName,
           isDirectory,
           isImage,
+          isText,
           isArchive,
           modified: fileInfo.mtime.getTime(),
           size: fileInfo.size,
@@ -903,6 +1003,7 @@ app.get("/.be/api/list-files", async (c) => {
             name: fileName,
             isDirectory: false,
             isImage: false,
+            isText: false,
             isArchive: false,
             modified: 0,
             size: 0,

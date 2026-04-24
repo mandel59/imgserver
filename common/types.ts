@@ -4,6 +4,7 @@ export type FileItem = {
   name: string;
   isDirectory: boolean;
   isImage: boolean;
+  isText: boolean;
   isArchive: boolean;
   modified: number;
   size: number;
@@ -43,4 +44,13 @@ export type ImageMetadata = {
   size: number;
   modified: number;
   textEntries?: MetadataTextEntry[];
+};
+
+export type TextFileContent = {
+  path: string;
+  archive: string;
+  name: string;
+  size: number;
+  modified: number;
+  content: string;
 };

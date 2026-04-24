@@ -5,6 +5,7 @@ import type {
   RuntimeFeatureOptions,
   SortOrder,
   SortOption,
+  TextFileContent,
 } from "@/common/types.ts";
 
 const beDir = new URL(`${backendUrl}/`);
@@ -40,6 +41,21 @@ export async function fetchImageMetadata(
 ): Promise<ImageMetadata> {
   const response = await fetch(
     `${beDir.href}api/image-metadata?path=${encodeURIComponent(
+      path
+    )}&archive=${encodeURIComponent(archive)}`
+  );
+  if (!response.ok) {
+    throw new Error(`Error ${response.status}: ${response.statusText}`);
+  }
+  return await response.json();
+}
+
+export async function fetchTextFileContent(
+  path: string,
+  archive: string,
+): Promise<TextFileContent> {
+  const response = await fetch(
+    `${beDir.href}api/text-file?path=${encodeURIComponent(
       path
     )}&archive=${encodeURIComponent(archive)}`
   );

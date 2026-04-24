@@ -6,6 +6,7 @@ import { resolve, dirname, basename } from "path-browserify";
 export interface LocationState {
   path: string;
   image: string;
+  text: string;
   archive: string;
   glob: string;
 }
@@ -21,6 +22,7 @@ export function urlOfLocation(location: LocationState): URL {
   url.pathname = resolve("/", location.path);
   url.search = "";
   if (location.image) url.searchParams.set("image", location.image);
+  if (location.text) url.searchParams.set("text", location.text);
   if (location.archive) url.searchParams.set("archive", location.archive);
   if (location.glob) url.searchParams.set("glob", location.glob);
   return url;
@@ -31,6 +33,7 @@ export function locationOfUrl(url: URL): LocationState {
   return {
     path: decodeURI(url.pathname).slice(1),
     image: searchParams?.get("image") ?? "",
+    text: searchParams?.get("text") ?? "",
     archive: searchParams?.get("archive") ?? "",
     glob: searchParams?.get("glob") ?? "",
   };
@@ -44,6 +47,7 @@ export function navigationForDir(path: string, archive: string): Navigation {
   return {
     path,
     image: "",
+    text: "",
     archive,
     glob: "",
   }
@@ -53,6 +57,16 @@ export function navigationForImage(path: string, archive: string): Navigation {
   return {
     path: dirname(path),
     image: basename(path),
+    text: "",
+    archive,
+  }
+}
+
+export function navigationForText(path: string, archive: string): Navigation {
+  return {
+    path: dirname(path),
+    image: "",
+    text: basename(path),
     archive,
   }
 }
@@ -88,4 +102,5 @@ export const locationAtom = atomWithLocation({ getLocation: getAndCanonicalizeLo
 export const currentPathAtom = focusAtom(locationAtom, optic => optic.prop("path"));
 export const currentArchiveAtom = focusAtom(locationAtom, optic => optic.prop("archive"));
 export const selectedImageNameAtom = focusAtom(locationAtom, optic => optic.prop("image"));
+export const selectedTextNameAtom = focusAtom(locationAtom, optic => optic.prop("text"));
 export const globAtom = focusAtom(locationAtom, optic => optic.prop("glob"));

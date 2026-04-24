@@ -1,0 +1,76 @@
+.text-modal-panel {
+  position: absolute;
+  inset: 20px;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  background: rgba(18, 18, 18, 0.96);
+  color: white;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.48);
+  user-select: text;
+}
+
+.text-modal-header {
+  display: grid;
+  gap: 4px;
+  padding: 16px 72px 14px 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.text-modal-title {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-size: 16px;
+  line-height: 1.35;
+}
+
+.text-modal-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  color: rgba(255, 255, 255, 0.64);
+  font-size: 12px;
+}
+
+.text-modal-body {
+  min-height: 0;
+  overflow: auto;
+}
+
+.text-modal-content {
+  min-height: 100%;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 16px 18px 28px;
+  color: rgba(255, 255, 255, 0.9);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.55;
+  overflow-wrap: normal;
+  white-space: pre-wrap;
+}
+
+.text-modal-status {
+  margin: 0;
+  padding: 18px;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+@media (max-width: 560px) {
+  .text-modal-panel {
+    inset: 12px;
+  }
+
+  .text-modal-header {
+    padding-left: 14px;
+  }
+
+  .text-modal-content {
+    padding: 14px 14px 24px;
+    font-size: 12px;
+  }
+}

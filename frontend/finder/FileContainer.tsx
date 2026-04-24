@@ -2,6 +2,7 @@ import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import type { FileItem } from "@/common/types.ts";
 import { currentFileItemsQueryAtom, filesListAtom } from "./states/fileList.ts";
 import { currentImagesAtom, onImageModalOpenAtom } from "./states/image.ts";
+import { onTextModalOpenAtom } from "./states/text.ts";
 import {
   type ThumbnailSize,
   thumbnailSizeAtom,
@@ -12,6 +13,7 @@ import {
   locationAtom,
   urlOfLocation,
   navigationForImage,
+  navigationForText,
   navigationForDir,
   navigated,
 } from "./states/location.ts";
@@ -214,6 +216,59 @@ export function RegularFileIcon({
   );
 }
 
+export function TextFileIcon({
+  file,
+  width,
+  height,
+  metadata,
+}: {
+  file: FileItem;
+  width: number;
+  height: number;
+  metadata?: React.ReactNode;
+}) {
+  const location = useAtomValue(locationAtom);
+  const onTextModalOpen = useSetAtom(onTextModalOpenAtom);
+
+  const openText = () => {
+    onTextModalOpen(file.path);
+  };
+
+  const handleClick = (e: React.MouseEvent) => {
+    if (e.button === 0 && !(e.metaKey || e.altKey || e.ctrlKey || e.shiftKey)) {
+      e.preventDefault();
+      openText();
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (
+      (e.key === "Enter" || e.key === " ") &&
+      !(e.metaKey || e.altKey || e.ctrlKey || e.shiftKey)
+    ) {
+      e.preventDefault();
+      openText();
+    }
+  };
+
+  return (
+    <IconWithName
+      icon="📝"
+      file={file}
+      width={width}
+      height={height}
+      href={
+        urlOfLocation(
+          navigated(location, navigationForText(file.path, file.archive))
+        ).href
+      }
+      onClick={handleClick}
+      onKeyDown={handleKeyDown}
+      metadata={metadata}
+    />
+  );
+}
+
 export function FileIcon({
   file,
   width = 150,
@@ -237,6 +292,15 @@ export function FileIcon({
   if (file.isImage)
     return (
       <ImageIcon file={file} width={width} height={height} metadata={metadata} />
+    );
+  if (file.isText)
+    return (
+      <TextFileIcon
+        file={file}
+        width={width}
+        height={height}
+        metadata={metadata}
+      />
     );
   return (
     <RegularFileIcon

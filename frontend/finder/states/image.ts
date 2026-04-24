@@ -1,6 +1,10 @@
 import { atom } from "jotai";
 import type { FileItem } from "@/common/types.ts";
-import { currentPathAtom, selectedImageNameAtom } from "./location.ts";
+import {
+  currentPathAtom,
+  selectedImageNameAtom,
+  selectedTextNameAtom,
+} from "./location.ts";
 import { filesListAtom } from "./fileList.ts";
 
 export const isImageModalOpenAtom = atom(
@@ -38,6 +42,7 @@ export const selectedImagePathAtom = atom((get) => {
 export const onImageModalOpenAtom = atom(
   null,
   (_get, set, imageName: string, index: number) => {
+    set(selectedTextNameAtom, "");
     set(selectedImageNameAtom, imageName);
   }
 );

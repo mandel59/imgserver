@@ -101,6 +101,8 @@ beforeAll(async () => {
   await writeFile(join(tempDir, "cache.png"), cacheOriginalPng);
   await writeFile(join(tempDir, "sort-small.jpg"), Buffer.alloc(10));
   await writeFile(join(tempDir, "sort-large.jpg"), Buffer.alloc(20));
+  await writeFile(join(tempDir, "notes.md"), "# Notes\n\nHello text viewer.\n");
+  await writeFile(join(tempDir, "large.txt"), Buffer.alloc(1024 * 1024 + 1, "a"));
   const archive = new AdmZip();
   archive.addFile("first.png", basePng);
   archive.addFile("second.png", basePng);
@@ -109,6 +111,7 @@ beforeAll(async () => {
   zip.addFile("UPPER.JPG", basePng);
   zip.addFile("PHOTO.PNG", basePng);
   zip.addFile("notes.txt", Buffer.from("not an image"));
+  zip.addFile("readme.md", Buffer.from("# Archive note\n"));
   await writeFile(join(tempDir, "upper-extensions.zip"), zip.toBuffer());
 
   process.argv = ["bun", "test", "--dir", tempDir, "--showMetadata"];
@@ -198,6 +201,48 @@ test("returns image metadata when enabled", async () => {
   expect(metadata.width).toBe(2);
   expect(metadata.height).toBe(2);
   expect(metadata.size).toBeGreaterThan(0);
+});
+
+test("returns UTF-8 text file content", async () => {
+  const response = await app.fetch(
+    new Request("http://localhost/.be/api/text-file?path=notes.md"),
+  );
+
+  expect(response.status).toBe(200);
+  const content = await response.json();
+  expect(content).toMatchObject({
+    path: "notes.md",
+    archive: "",
+    name: "notes.md",
+    content: "# Notes\n\nHello text viewer.\n",
+  });
+  expect(content.size).toBeGreaterThan(0);
+});
+
+test("rejects text file content above the size limit", async () => {
+  const response = await app.fetch(
+    new Request("http://localhost/.be/api/text-file?path=large.txt"),
+  );
+
+  expect(response.status).toBe(413);
+  expect(await response.json()).toEqual({ error: "File too large" });
+});
+
+test("returns text file content inside ZIP archives", async () => {
+  const response = await app.fetch(
+    new Request(
+      "http://localhost/.be/api/text-file?archive=upper-extensions.zip&path=upper-extensions.zip%2Freadme.md",
+    ),
+  );
+
+  expect(response.status).toBe(200);
+  const content = await response.json();
+  expect(content).toMatchObject({
+    path: "upper-extensions.zip/readme.md",
+    archive: "upper-extensions.zip",
+    name: "readme.md",
+    content: "# Archive note\n",
+  });
 });
 
 test("returns truncated PNG text metadata", async () => {
@@ -361,6 +406,15 @@ test("recognizes uppercase image extensions inside ZIP archives", async () => {
     expect.objectContaining({
       name: "notes.txt",
       isImage: false,
+      isText: true,
+      isArchive: false,
+    }),
+  );
+  expect(listing.files).toContainEqual(
+    expect.objectContaining({
+      name: "readme.md",
+      isImage: false,
+      isText: true,
       isArchive: false,
     }),
   );
