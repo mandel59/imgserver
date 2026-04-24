@@ -3,6 +3,7 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import sharp from "sharp";
+import AdmZip from "adm-zip";
 
 let app: { fetch: (request: Request) => Response | Promise<Response> };
 let tempDir: string;
@@ -80,6 +81,10 @@ beforeAll(async () => {
       createPngTextChunk("Comment", commentText),
     ),
   );
+  const archive = new AdmZip();
+  archive.addFile("first.png", basePng);
+  archive.addFile("second.png", basePng);
+  archive.writeZip(join(tempDir, "archive.zip"));
 
   process.argv = ["bun", "test", "--dir", tempDir, "--showMetadata"];
   ({ default: app } = await import("./app.ts"));
@@ -151,4 +156,25 @@ test("returns truncated PNG text metadata", async () => {
   });
   expect(metadata.textEntries[0].value).toStartWith("PNG comment PNG comment");
   expect(metadata.textEntries[0].value.length).toBe(16 * 1024);
+});
+
+test("uses distinct ETags for different images inside a ZIP archive", async () => {
+  const firstResponse = await app.fetch(
+    new Request(
+      "http://localhost/.be/images/archive.zip/first.png?archive=archive.zip",
+    ),
+  );
+  const secondResponse = await app.fetch(
+    new Request(
+      "http://localhost/.be/images/archive.zip/second.png?archive=archive.zip",
+    ),
+  );
+
+  expect(firstResponse.status).toBe(200);
+  expect(secondResponse.status).toBe(200);
+  expect(firstResponse.headers.get("ETag")).toBeTruthy();
+  expect(secondResponse.headers.get("ETag")).toBeTruthy();
+  expect(firstResponse.headers.get("ETag")).not.toBe(
+    secondResponse.headers.get("ETag"),
+  );
 });
