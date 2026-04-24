@@ -448,8 +448,13 @@ button:focus-visible,
 
   .file-container-list .file-icon {
     grid-row: 1 / span 2;
-    align-self: center;
-    height: var(--thumbnail-height, 64px);
+    align-self: stretch;
+    height: auto;
+  }
+
+  .file-container-list .file-thumbnail {
+    height: 0;
+    min-height: 100%;
   }
 
   .file-container-list .file-meta {
