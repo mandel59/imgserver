@@ -1,11 +1,13 @@
 import { afterAll, beforeAll, expect, test } from "bun:test";
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, rm, stat, utimes, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import sharp from "sharp";
 
 let app: { fetch: (request: Request) => Response | Promise<Response> };
+let createTransformedImageCacheKey: typeof import("./app.ts").createTransformedImageCacheKey;
 let tempDir: string;
+let cacheAlternatePng: Buffer;
 const originalArgv = [...process.argv];
 
 function crc32(buffer: Buffer) {
@@ -54,6 +56,17 @@ function insertPngChunkBeforeIend(png: Buffer, chunk: Buffer) {
   throw new Error("IEND chunk not found");
 }
 
+function createSolidPng(background: { r: number; g: number; b: number }) {
+  return sharp({
+    create: {
+      width: 4,
+      height: 4,
+      channels: 3,
+      background,
+    },
+  }).png({ compressionLevel: 0 }).toBuffer();
+}
+
 beforeAll(async () => {
   tempDir = await mkdtemp(join(tmpdir(), "imgserver-"));
   await sharp({
@@ -80,9 +93,13 @@ beforeAll(async () => {
       createPngTextChunk("Comment", commentText),
     ),
   );
+  const cacheOriginalPng = await createSolidPng({ r: 200, g: 40, b: 40 });
+  cacheAlternatePng = await createSolidPng({ r: 40, g: 200, b: 40 });
+  expect(cacheAlternatePng.byteLength).toBe(cacheOriginalPng.byteLength);
+  await writeFile(join(tempDir, "cache.png"), cacheOriginalPng);
 
   process.argv = ["bun", "test", "--dir", tempDir, "--showMetadata"];
-  ({ default: app } = await import("./app.ts"));
+  ({ default: app, createTransformedImageCacheKey } = await import("./app.ts"));
 });
 
 afterAll(async () => {
@@ -151,4 +168,72 @@ test("returns truncated PNG text metadata", async () => {
   });
   expect(metadata.textEntries[0].value).toStartWith("PNG comment PNG comment");
   expect(metadata.textEntries[0].value.length).toBe(16 * 1024);
+});
+
+test("reuses cached transformed image buffers for unchanged source identity", async () => {
+  const imagePath = join(tempDir, "cache.png");
+  const originalInfo = await stat(imagePath);
+  const requestUrl = "http://localhost/.be/images/cache.png?width=2&height=2&format=webp";
+
+  const firstResponse = await app.fetch(new Request(requestUrl));
+  expect(firstResponse.status).toBe(200);
+  const firstBuffer = Buffer.from(await firstResponse.arrayBuffer());
+
+  await writeFile(imagePath, cacheAlternatePng);
+  await utimes(imagePath, originalInfo.atime, originalInfo.mtime);
+
+  const secondResponse = await app.fetch(new Request(requestUrl));
+  expect(secondResponse.status).toBe(200);
+  const secondBuffer = Buffer.from(await secondResponse.arrayBuffer());
+
+  expect(secondBuffer.equals(firstBuffer)).toBe(true);
+});
+
+test("builds transformed image cache keys from source identity and transform options", () => {
+  const commonOptions = {
+    mtime: 123,
+    size: 456,
+    width: "100",
+    height: "80",
+    fit: "inside",
+    format: "webp",
+    keepMetadata: false,
+  };
+
+  const regularKey = createTransformedImageCacheKey({
+    ...commonOptions,
+    path: "photos/item.png",
+    archive: "",
+    key: "",
+  });
+  const archiveKey = createTransformedImageCacheKey({
+    ...commonOptions,
+    path: "photos.zip/item.png",
+    archive: "photos.zip",
+    key: "item.png",
+    encoding: "shift_jis",
+  });
+  const metadataKey = createTransformedImageCacheKey({
+    ...commonOptions,
+    path: "photos/item.png",
+    archive: "",
+    key: "",
+    keepMetadata: true,
+  });
+
+  expect(regularKey).not.toBe(archiveKey);
+  expect(regularKey).not.toBe(metadataKey);
+  expect(JSON.parse(archiveKey)).toMatchObject({
+    path: "photos.zip/item.png",
+    archive: "photos.zip",
+    key: "item.png",
+    encoding: "shift_jis",
+    mtime: 123,
+    size: 456,
+    width: "100",
+    height: "80",
+    fit: "inside",
+    format: "webp",
+    keepMetadata: false,
+  });
 });

@@ -43,8 +43,96 @@ const archiveExtensions = [
 const maxMetadataTextLength = 16 * 1024;
 const maxInflatedMetadataTextLength = 256 * 1024;
 const pngSignature = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+const transformedImageCacheMaxEntries = 100;
+const transformedImageCacheMaxBytes = 64 * 1024 * 1024;
 
 const app = new Hono();
+
+type TransformedImageCacheKeyOptions = {
+  path: string;
+  archive: string;
+  key: string;
+  encoding?: string;
+  mtime: number;
+  size: number;
+  width?: string;
+  height?: string;
+  fit?: string;
+  format?: string;
+  keepMetadata: boolean;
+};
+
+type TransformedImageCacheEntry = {
+  buffer: Buffer;
+  size: number;
+};
+
+const transformedImageCache = new Map<string, TransformedImageCacheEntry>();
+let transformedImageCacheBytes = 0;
+
+export function createTransformedImageCacheKey(options: TransformedImageCacheKeyOptions) {
+  return JSON.stringify({
+    path: options.path,
+    archive: options.archive,
+    key: options.key,
+    encoding: options.encoding,
+    mtime: options.mtime,
+    size: options.size,
+    width: options.width,
+    height: options.height,
+    fit: options.fit,
+    format: options.format,
+    keepMetadata: options.keepMetadata,
+  });
+}
+
+function getTransformedImageCache(key: string) {
+  const entry = transformedImageCache.get(key);
+  if (!entry) {
+    return null;
+  }
+
+  transformedImageCache.delete(key);
+  transformedImageCache.set(key, entry);
+  return entry.buffer;
+}
+
+function pruneTransformedImageCache() {
+  while (
+    transformedImageCache.size > transformedImageCacheMaxEntries ||
+    transformedImageCacheBytes > transformedImageCacheMaxBytes
+  ) {
+    const oldestKey = transformedImageCache.keys().next().value;
+    if (oldestKey == null) {
+      return;
+    }
+    const oldestEntry = transformedImageCache.get(oldestKey);
+    transformedImageCache.delete(oldestKey);
+    if (oldestEntry) {
+      transformedImageCacheBytes -= oldestEntry.size;
+    }
+  }
+}
+
+function setTransformedImageCache(key: string, buffer: Buffer) {
+  const existing = transformedImageCache.get(key);
+  if (existing) {
+    transformedImageCacheBytes -= existing.size;
+    transformedImageCache.delete(key);
+  }
+
+  if (buffer.byteLength > transformedImageCacheMaxBytes) {
+    pruneTransformedImageCache();
+    return;
+  }
+
+  transformedImageCache.set(key, {
+    buffer,
+    size: buffer.byteLength,
+  });
+  transformedImageCacheBytes += buffer.byteLength;
+  pruneTransformedImageCache();
+}
 
 function decodeImageRequestPath(path: string) {
   try {
@@ -339,12 +427,14 @@ app.get("/.be/images/*", etag(), async (c) => {
   let header: AdbZip.EntryHeader | null = null;
   let mtime: number = 0;
   let fileSize: number = 0;
+  let archiveKey = "";
   if (archive) {
     const key = resolveArchiveKey(path, archive);
     if (key == null) {
       console.error(`Invalid path attempt: ${path}`);
       return c.json({ error: "File not found" }, 404);
     }
+    archiveKey = key;
 
     const archivePath = join(imagesDir, archive);
 
@@ -501,8 +591,30 @@ app.get("/.be/images/*", etag(), async (c) => {
         break;
     }
 
+    const transformedImageCacheKey = createTransformedImageCacheKey({
+      path,
+      archive,
+      key: archiveKey,
+      encoding: archive ? encoding : undefined,
+      mtime,
+      size: archive ? (header?.size ?? buffer?.byteLength ?? 0) : fileSize,
+      width: width || undefined,
+      height: height || undefined,
+      fit: fit || undefined,
+      format: format || undefined,
+      keepMetadata,
+    });
+    const cachedBuffer = getTransformedImageCache(transformedImageCacheKey);
+    if (cachedBuffer) {
+      return stream(c, async (stream) => {
+        await stream.write(cachedBuffer);
+      });
+    }
+
     return stream(c, async (stream) => {
-      await stream.write(await image.toBuffer());
+      const outputBuffer = await image.toBuffer();
+      setTransformedImageCache(transformedImageCacheKey, outputBuffer);
+      await stream.write(outputBuffer);
     });
   } catch (err) {
     if (
