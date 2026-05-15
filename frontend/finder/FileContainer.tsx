@@ -1,4 +1,4 @@
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import type { FileItem } from "@/common/types.ts";
 import { currentFileItemsQueryAtom, filesListAtom } from "./states/fileList.ts";
@@ -20,6 +20,21 @@ import {
 } from "./states/location.ts";
 import { imageResourceUrl } from "./resources.ts";
 import { isFileNavigationKey, nextFileFocusIndex } from "./fileNavigation.ts";
+
+let pendingFileListFocus = false;
+
+export function requestFileListFocus() {
+  pendingFileListFocus = true;
+  requestAnimationFrame(() => {
+    document
+      .getElementById("file-container")
+      ?.focus({ preventScroll: true });
+  });
+}
+
+function preferredFileListFocusIndex(defaultIndex: number) {
+  return pendingFileListFocus ? 0 : defaultIndex;
+}
 
 export function IconWithName({
   icon,
@@ -100,6 +115,7 @@ export function FolderIcon({
     ) {
       e.preventDefault();
       onNavigate(navigationForDir(file.path, file.archive));
+      requestFileListFocus();
     }
   };
 
@@ -411,6 +427,7 @@ export default function FileContainer() {
   const [{ isLoading }] = useAtom(currentFileItemsQueryAtom);
   const viewMode = useAtomValue(viewModeAtom);
   const thumbnailSize = useAtomValue(thumbnailSizeAtom);
+  const containerRef = useRef<HTMLDivElement>(null);
   const focusedItemIndexRef = useRef(0);
 
   const files: FileItem[] = useAtomValue(filesListAtom);
@@ -436,9 +453,36 @@ export default function FileContainer() {
 
     if (event.target !== container || items.length === 0) return;
 
-    const nextIndex = Math.min(focusedItemIndexRef.current, items.length - 1);
+    const nextIndex = preferredFileListFocusIndex(
+      Math.min(focusedItemIndexRef.current, items.length - 1)
+    );
+    focusedItemIndexRef.current = nextIndex;
     focusFileItemAt(items, nextIndex);
   }, []);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    if (!pendingFileListFocus && document.activeElement !== container) return;
+
+    const items = fileItemsIn(container);
+    if (items.length === 0) {
+      if (pendingFileListFocus && !isLoading) {
+        container.focus({ preventScroll: true });
+        pendingFileListFocus = false;
+      }
+      return;
+    }
+
+    const nextIndex = preferredFileListFocusIndex(
+      Math.min(focusedItemIndexRef.current, items.length - 1)
+    );
+    focusedItemIndexRef.current = nextIndex;
+    focusFileItemAt(items, nextIndex);
+    if (!isLoading) {
+      pendingFileListFocus = false;
+    }
+  }, [files.length, isLoading]);
 
   const handleKeyDown = useCallback(
     (event: React.KeyboardEvent<HTMLDivElement>) => {
@@ -484,6 +528,7 @@ export default function FileContainer() {
   return (
     <div
       id="file-container"
+      ref={containerRef}
       className={`file-container-${viewMode}`}
       style={containerStyle}
       tabIndex={0}

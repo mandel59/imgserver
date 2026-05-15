@@ -5,7 +5,7 @@ import ImageModal from "./ImageModal.tsx";
 import TextModal from "./TextModal.tsx";
 import Controls from "./Controls.tsx";
 import Breadcrumbs from "./Breadcrumbs.tsx";
-import FileContainer from "./FileContainer.tsx";
+import FileContainer, { requestFileListFocus } from "./FileContainer.tsx";
 import { htmlClassAtom } from "./states/display.ts";
 import { locationAtom, navigated } from "./states/location.ts";
 import { navigationForParentDir } from "./locationNavigation.ts";
@@ -37,6 +37,7 @@ export default function Finder() {
 
       event.preventDefault();
       setLocation(navigated(location, navigation));
+      requestFileListFocus();
     };
 
     window.addEventListener("keydown", handleKeyDown);
