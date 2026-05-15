@@ -1,3 +1,4 @@
+import { useCallback, useEffect, useRef } from "react";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import type { FileItem } from "@/common/types.ts";
 import { currentFileItemsQueryAtom, filesListAtom } from "./states/fileList.ts";
@@ -18,6 +19,22 @@ import {
   navigated,
 } from "./states/location.ts";
 import { imageResourceUrl } from "./resources.ts";
+import { isFileNavigationKey, nextFileFocusIndex } from "./fileNavigation.ts";
+
+let pendingFileListFocus = false;
+
+export function requestFileListFocus() {
+  pendingFileListFocus = true;
+  requestAnimationFrame(() => {
+    document
+      .getElementById("file-container")
+      ?.focus({ preventScroll: true });
+  });
+}
+
+function preferredFileListFocusIndex(defaultIndex: number) {
+  return pendingFileListFocus ? 0 : defaultIndex;
+}
 
 export function IconWithName({
   icon,
@@ -51,7 +68,7 @@ export function IconWithName({
     <a
       className="file-item"
       data-file-name={file.name}
-      tabIndex={0}
+      tabIndex={-1}
       href={href}
       onClick={onClick}
       onKeyDown={onKeyDown}
@@ -98,6 +115,7 @@ export function FolderIcon({
     ) {
       e.preventDefault();
       onNavigate(navigationForDir(file.path, file.archive));
+      requestFileListFocus();
     }
   };
 
@@ -342,6 +360,58 @@ function formatModifiedTime(modified: number): string {
   }).format(new Date(modified));
 }
 
+function fileItemsIn(container: HTMLElement) {
+  return Array.from(container.querySelectorAll<HTMLElement>(".file-item"));
+}
+
+function focusedFileItemIn(container: HTMLElement) {
+  const active = document.activeElement;
+  if (!(active instanceof HTMLElement)) return null;
+  const item = active.closest<HTMLElement>(".file-item");
+  if (!item || !container.contains(item)) return null;
+  return item;
+}
+
+function gridColumnCount(items: HTMLElement[]) {
+  const firstItem = items[0];
+  if (!firstItem) return 1;
+
+  const firstTop = firstItem.offsetTop;
+  const firstRowCount = items.findIndex((item) => item.offsetTop !== firstTop);
+  return firstRowCount === -1 ? items.length : Math.max(1, firstRowCount);
+}
+
+function focusFileItemAt(items: HTMLElement[], index: number) {
+  const item = items[index];
+  if (!item) return;
+  item.focus({ preventScroll: true });
+  item.scrollIntoView({ block: "nearest", inline: "nearest" });
+}
+
+function tabbableElements() {
+  return Array.from(
+    document.querySelectorAll<HTMLElement>(
+      [
+        'a[href]:not([tabindex="-1"])',
+        'button:not([disabled]):not([tabindex="-1"])',
+        'input:not([disabled]):not([tabindex="-1"])',
+        'select:not([disabled]):not([tabindex="-1"])',
+        'textarea:not([disabled]):not([tabindex="-1"])',
+        '[tabindex]:not([tabindex="-1"])',
+      ].join(",")
+    )
+  ).filter((element) => !element.closest('[aria-hidden="true"]'));
+}
+
+function focusPreviousControlBefore(container: HTMLElement) {
+  const elements = tabbableElements();
+  const containerIndex = elements.indexOf(container);
+  if (containerIndex <= 0) return false;
+
+  elements[containerIndex - 1]?.focus();
+  return true;
+}
+
 function FileMetadata({ file }: { file: FileItem }) {
   const size = file.isDirectory ? "" : formatFileSize(file.size);
   const modified = formatModifiedTime(file.modified);
@@ -357,8 +427,18 @@ export default function FileContainer() {
   const [{ isLoading }] = useAtom(currentFileItemsQueryAtom);
   const viewMode = useAtomValue(viewModeAtom);
   const thumbnailSize = useAtomValue(thumbnailSizeAtom);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const focusedItemIndexRef = useRef(0);
 
   const files: FileItem[] = useAtomValue(filesListAtom);
+  const isEmpty = !isLoading && files.length === 0;
+  const containerClassName = [
+    `file-container-${viewMode}`,
+    isLoading && files.length === 0 ? "file-container-loading" : "",
+    isEmpty ? "file-container-empty" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
   const dimensions = thumbnailDimensions[thumbnailSize];
   const iconHeight =
     viewMode === "grid" ? dimensions.gridHeight : dimensions.listHeight;
@@ -366,16 +446,114 @@ export default function FileContainer() {
     "--grid-card-min": `${dimensions.cardWidth}px`,
   } as React.CSSProperties;
 
+  const handleFocus = useCallback((event: React.FocusEvent<HTMLDivElement>) => {
+    const container = event.currentTarget;
+    const items = fileItemsIn(container);
+    const focusedItem = focusedFileItemIn(container);
+
+    if (focusedItem) {
+      const focusedIndex = items.indexOf(focusedItem);
+      if (focusedIndex !== -1) {
+        focusedItemIndexRef.current = focusedIndex;
+      }
+      return;
+    }
+
+    if (event.target !== container || items.length === 0) return;
+
+    const nextIndex = preferredFileListFocusIndex(
+      Math.min(focusedItemIndexRef.current, items.length - 1)
+    );
+    focusedItemIndexRef.current = nextIndex;
+    focusFileItemAt(items, nextIndex);
+  }, []);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    if (!pendingFileListFocus && document.activeElement !== container) return;
+
+    const items = fileItemsIn(container);
+    if (items.length === 0) {
+      if (pendingFileListFocus && !isLoading) {
+        container.focus({ preventScroll: true });
+        pendingFileListFocus = false;
+      }
+      return;
+    }
+
+    const nextIndex = preferredFileListFocusIndex(
+      Math.min(focusedItemIndexRef.current, items.length - 1)
+    );
+    focusedItemIndexRef.current = nextIndex;
+    focusFileItemAt(items, nextIndex);
+    if (!isLoading) {
+      pendingFileListFocus = false;
+    }
+  }, [files.length, isLoading]);
+
+  const handleKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLDivElement>) => {
+      const container = event.currentTarget;
+
+      if (event.key === "Tab" && event.shiftKey) {
+        const focusedItem = focusedFileItemIn(container);
+        if (focusedItem && focusPreviousControlBefore(container)) {
+          event.preventDefault();
+        }
+        return;
+      }
+
+      if (!isFileNavigationKey(event.key)) return;
+      if (event.metaKey || event.altKey || event.ctrlKey || event.shiftKey) {
+        return;
+      }
+
+      const focusedItem = focusedFileItemIn(container);
+      if (!focusedItem) return;
+
+      event.preventDefault();
+
+      const items = fileItemsIn(container);
+      const currentIndex = items.indexOf(focusedItem);
+      if (currentIndex === -1) return;
+
+      const columns = viewMode === "grid" ? gridColumnCount(items) : 1;
+      const nextIndex = nextFileFocusIndex({
+        key: event.key,
+        currentIndex,
+        itemCount: items.length,
+        columns,
+      });
+
+      if (nextIndex === currentIndex) return;
+      focusedItemIndexRef.current = nextIndex;
+      focusFileItemAt(items, nextIndex);
+    },
+    [viewMode]
+  );
+
   return (
     <div
       id="file-container"
-      className={`file-container-${viewMode}`}
+      ref={containerRef}
+      className={containerClassName}
       style={containerStyle}
+      tabIndex={0}
+      aria-label="ファイル一覧"
+      aria-busy={isLoading}
+      onFocus={handleFocus}
+      onKeyDown={handleKeyDown}
     >
       {isLoading ? (
         <div className="loading-overlay">
           <div className="loading-spinner"></div>
           <div className="loading-text">Loading...</div>
+        </div>
+      ) : null}
+      {isEmpty ? (
+        <div className="file-list-status" role="status">
+          表示できるファイルがありません
         </div>
       ) : null}
       {files.map((file, i) => (
