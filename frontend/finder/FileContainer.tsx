@@ -431,6 +431,14 @@ export default function FileContainer() {
   const focusedItemIndexRef = useRef(0);
 
   const files: FileItem[] = useAtomValue(filesListAtom);
+  const isEmpty = !isLoading && files.length === 0;
+  const containerClassName = [
+    `file-container-${viewMode}`,
+    isLoading && files.length === 0 ? "file-container-loading" : "",
+    isEmpty ? "file-container-empty" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
   const dimensions = thumbnailDimensions[thumbnailSize];
   const iconHeight =
     viewMode === "grid" ? dimensions.gridHeight : dimensions.listHeight;
@@ -529,10 +537,11 @@ export default function FileContainer() {
     <div
       id="file-container"
       ref={containerRef}
-      className={`file-container-${viewMode}`}
+      className={containerClassName}
       style={containerStyle}
       tabIndex={0}
       aria-label="ファイル一覧"
+      aria-busy={isLoading}
       onFocus={handleFocus}
       onKeyDown={handleKeyDown}
     >
@@ -540,6 +549,11 @@ export default function FileContainer() {
         <div className="loading-overlay">
           <div className="loading-spinner"></div>
           <div className="loading-text">Loading...</div>
+        </div>
+      ) : null}
+      {isEmpty ? (
+        <div className="file-list-status" role="status">
+          表示できるファイルがありません
         </div>
       ) : null}
       {files.map((file, i) => (

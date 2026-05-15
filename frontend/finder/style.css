@@ -64,6 +64,30 @@ body {
   gap: 8px;
 }
 
+#file-container.file-container-loading,
+#file-container.file-container-empty {
+  min-height: 160px;
+}
+
+.file-list-status {
+  grid-column: 1 / -1;
+  min-height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed var(--button-border);
+  border-radius: 8px;
+  color: var(--placeholder-color);
+  background: var(--card-bg);
+  text-align: center;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.file-container-list .file-list-status {
+  min-height: 96px;
+}
+
 .file-item {
   all: unset;
   -webkit-tap-highlight-color: transparent;
