@@ -1,3 +1,4 @@
+import { useCallback } from "react";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import type { FileItem } from "@/common/types.ts";
 import { currentFileItemsQueryAtom, filesListAtom } from "./states/fileList.ts";
@@ -18,6 +19,7 @@ import {
   navigated,
 } from "./states/location.ts";
 import { imageResourceUrl } from "./resources.ts";
+import { isFileNavigationKey, nextFileFocusIndex } from "./fileNavigation.ts";
 
 export function IconWithName({
   icon,
@@ -342,6 +344,34 @@ function formatModifiedTime(modified: number): string {
   }).format(new Date(modified));
 }
 
+function fileItemsIn(container: HTMLElement) {
+  return Array.from(container.querySelectorAll<HTMLElement>(".file-item"));
+}
+
+function focusedFileItemIn(container: HTMLElement) {
+  const active = document.activeElement;
+  if (!(active instanceof HTMLElement)) return null;
+  const item = active.closest<HTMLElement>(".file-item");
+  if (!item || !container.contains(item)) return null;
+  return item;
+}
+
+function gridColumnCount(items: HTMLElement[]) {
+  const firstItem = items[0];
+  if (!firstItem) return 1;
+
+  const firstTop = firstItem.offsetTop;
+  const firstRowCount = items.findIndex((item) => item.offsetTop !== firstTop);
+  return firstRowCount === -1 ? items.length : Math.max(1, firstRowCount);
+}
+
+function focusFileItemAt(items: HTMLElement[], index: number) {
+  const item = items[index];
+  if (!item) return;
+  item.focus({ preventScroll: true });
+  item.scrollIntoView({ block: "nearest", inline: "nearest" });
+}
+
 function FileMetadata({ file }: { file: FileItem }) {
   const size = file.isDirectory ? "" : formatFileSize(file.size);
   const modified = formatModifiedTime(file.modified);
@@ -366,11 +396,43 @@ export default function FileContainer() {
     "--grid-card-min": `${dimensions.cardWidth}px`,
   } as React.CSSProperties;
 
+  const handleKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLDivElement>) => {
+      if (!isFileNavigationKey(event.key)) return;
+      if (event.metaKey || event.altKey || event.ctrlKey || event.shiftKey) {
+        return;
+      }
+
+      const container = event.currentTarget;
+      const focusedItem = focusedFileItemIn(container);
+      if (!focusedItem) return;
+
+      event.preventDefault();
+
+      const items = fileItemsIn(container);
+      const currentIndex = items.indexOf(focusedItem);
+      if (currentIndex === -1) return;
+
+      const columns = viewMode === "grid" ? gridColumnCount(items) : 1;
+      const nextIndex = nextFileFocusIndex({
+        key: event.key,
+        currentIndex,
+        itemCount: items.length,
+        columns,
+      });
+
+      if (nextIndex === currentIndex) return;
+      focusFileItemAt(items, nextIndex);
+    },
+    [viewMode]
+  );
+
   return (
     <div
       id="file-container"
       className={`file-container-${viewMode}`}
       style={containerStyle}
+      onKeyDown={handleKeyDown}
     >
       {isLoading ? (
         <div className="loading-overlay">
