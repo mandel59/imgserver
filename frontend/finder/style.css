@@ -64,9 +64,8 @@ body {
   gap: 8px;
 }
 
-#file-container.file-container-loading,
-#file-container.file-container-empty {
-  min-height: 160px;
+#file-container.file-container-loading:focus-visible {
+  outline: none;
 }
 
 .file-list-status {
