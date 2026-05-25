@@ -394,6 +394,15 @@ function focusFileItemAt(items: HTMLElement[], index: number) {
   if (!item) return;
   item.focus({ preventScroll: true });
   item.scrollIntoView({ block: "nearest", inline: "nearest" });
+  const headerBottom =
+    document.querySelector<HTMLElement>(".header-container")
+      ?.getBoundingClientRect().bottom ?? 0;
+  const topPadding = 8;
+  const minVisibleTop = headerBottom + topPadding;
+  const rect = item.getBoundingClientRect();
+  if (rect.top < minVisibleTop) {
+    window.scrollBy({ top: rect.top - minVisibleTop });
+  }
 }
 
 function tabbableElements() {
