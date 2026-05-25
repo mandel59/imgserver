@@ -22,9 +22,11 @@ import { imageResourceUrl } from "./resources.ts";
 import { isFileNavigationKey, nextFileFocusIndex } from "./fileNavigation.ts";
 
 let pendingFileListFocus = false;
+let pendingFileListFocusName: string | null = null;
 
-export function requestFileListFocus() {
+export function requestFileListFocus(fileName?: string) {
   pendingFileListFocus = true;
+  pendingFileListFocusName = fileName ?? null;
   requestAnimationFrame(() => {
     document
       .getElementById("file-container")
@@ -32,8 +34,14 @@ export function requestFileListFocus() {
   });
 }
 
-function preferredFileListFocusIndex(defaultIndex: number) {
-  return pendingFileListFocus ? 0 : defaultIndex;
+function preferredFileListFocusIndex(items: HTMLElement[], defaultIndex: number) {
+  if (!pendingFileListFocus) return defaultIndex;
+  if (!pendingFileListFocusName) return 0;
+
+  const targetIndex = items.findIndex(
+    (item) => item.dataset.fileName === pendingFileListFocusName
+  );
+  return targetIndex === -1 ? 0 : targetIndex;
 }
 
 export function IconWithName({
@@ -462,6 +470,7 @@ export default function FileContainer() {
     if (event.target !== container || items.length === 0) return;
 
     const nextIndex = preferredFileListFocusIndex(
+      items,
       Math.min(focusedItemIndexRef.current, items.length - 1)
     );
     focusedItemIndexRef.current = nextIndex;
@@ -483,12 +492,14 @@ export default function FileContainer() {
     }
 
     const nextIndex = preferredFileListFocusIndex(
+      items,
       Math.min(focusedItemIndexRef.current, items.length - 1)
     );
     focusedItemIndexRef.current = nextIndex;
     focusFileItemAt(items, nextIndex);
     if (!isLoading) {
       pendingFileListFocus = false;
+      pendingFileListFocusName = null;
     }
   }, [files.length, isLoading]);
 
