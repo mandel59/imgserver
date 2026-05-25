@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { basename } from "path-browserify";
 import { useAtom } from "jotai";
 
 import ImageModal from "./ImageModal.tsx";
@@ -37,7 +38,7 @@ export default function Finder() {
 
       event.preventDefault();
       setLocation(navigated(location, navigation));
-      requestFileListFocus();
+      requestFileListFocus(basename(location.path));
     };
 
     window.addEventListener("keydown", handleKeyDown);
